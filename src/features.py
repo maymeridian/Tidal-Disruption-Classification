@@ -57,7 +57,6 @@ def extract_features(lc_df, log_df):
     snr_feats.columns = [f'snr_{stat}_{filt}' for stat, filt in snr_feats.columns]
 
     # 3. Temporal Features (Duration) (Length of Object Visibility (Max time - Min time))
-    # FIXED: Changed 'Time' to 'Time (MJD)' to match the dataset
     duration_df = lc_df.groupby('object_id')['Time (MJD)'].agg(np.ptp) # ptp = peak to peak (max - min)
     duration_df.name = 'duration'
 
