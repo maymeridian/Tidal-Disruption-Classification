@@ -21,10 +21,10 @@ print(f"Using: {device.type}")
 # for weighted average in ensemble stage
 BIAS_WEIGHT_NN = 0.4
 BIAS_WEIGHT_XGB = 0.6
-NUM_EPOCHS = 3000
+NUM_EPOCHS = 15000
 LEARNING_RATE = 5e-5
 
-THRESHOLD = 0.7
+THRESHOLD = 0.75
 
 # load or process training data
 def load_process_training_data():
@@ -326,6 +326,38 @@ def train_model(df):
     return best_model['model'], xgb_model, ensemble_train_probs, ensemble_val_probs, best_model['scaler'] 
 
 
+# use predetermined model for training
+def train_selected_model(df): 
+    X = df.drop(columns='object_id').values
+    y = df['object_id'].map(train_log.set_index('object_id')['target']).values
+    
+    # drop nan's
+    X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
+    
+    model, train_probs, val_probs, val_loss, scaler = train_individual_model(
+        X_train, y_train, X_val, y_val, 
+        hidden_dim=256, 
+        alpha=0.1,
+        gamma=2.5,
+        epochs=NUM_EPOCHS,
+        lr=LEARNING_RATE
+    )
+
+    # ensemble with XGBoost
+    ensemble_train_probs, ensemble_val_probs, xgb_model = ensemble_nn_xgb(
+        X_train, y_train, X_val, y_val,
+        train_probs,
+        val_probs
+    )
+    
+    return model, xgb_model, ensemble_train_probs, ensemble_val_probs, scaler
+
+        
+
 
 def predict_test_set(neural_network_model, xgb_model, scaler, test_features_df, test_log, output_path='submission.csv'):
     X_test = test_features_df.drop(columns='object_id').values
@@ -361,7 +393,7 @@ def predict_test_set(neural_network_model, xgb_model, scaler, test_features_df, 
 train_features_df, train_log = load_process_training_data()
 test_features_df, test_log = load_process_test_data()
 
-nn_model, xgb_model, ensemble_train_probs, ensemble_val_probs, scaler = train_model(train_features_df)
+nn_model, xgb_model, ensemble_train_probs, ensemble_val_probs, scaler = train_selected_model(train_features_df)
 
 predict_test_set(
     neural_network_model=nn_model,
