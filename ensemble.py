@@ -18,13 +18,29 @@ from src.features import apply_deextinction, extract_features
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using: {device.type}")
 
-# for weighted average in ensemble stage
-BIAS_WEIGHT_NN = 0.4
-BIAS_WEIGHT_XGB = 0.6
-NUM_EPOCHS = 15000
-LEARNING_RATE = 5e-5
 
-THRESHOLD = 0.75
+
+# want to cut off training when avg 
+# recall is mean likelihood of Tidal Distortion Event
+# want it to be ~0.0667 (6.7%) to prevent overfitting, I think?
+
+# - number of epochs is so high because its when we start to see the correct recall
+# - learning rate is low to try and help with accuracy 
+# - threshold is the cutoff of percent certainty between a prediction being assumed true or not
+
+# todo: 
+# want to make an algorithm to find optimal weights for weighted average that gets the 
+# recall value to as close as its supposed to be. might be better or worse than area under the curve as a metric
+
+
+# for weighted average in ensemble stage
+BIAS_WEIGHT_NN = 0.68
+BIAS_WEIGHT_XGB = 0.32
+# NN config
+NUM_EPOCHS = 25500
+LEARNING_RATE = 5e-5
+THRESHOLD = 0.7
+
 
 # load or process training data
 def load_process_training_data():
@@ -130,7 +146,7 @@ class TestNN(nn.Module):
 
 
 def train_individual_model(X_train, y_train, X_val, y_val, 
-                          hidden_dim=64, alpha=0.25, gamma=2.0, epochs=100, lr=LEARNING_RATE):
+                          hidden_dim=256, alpha=0.25, gamma=2.0, epochs=100, lr=LEARNING_RATE):
 
     # scale data
     scaler = StandardScaler()
