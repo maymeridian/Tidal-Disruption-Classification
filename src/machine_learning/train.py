@@ -1,7 +1,7 @@
 '''
-train.py
+src/machine_learning/train.py
 Author: maia.advance, maymeridian
-Description: 
+Description: Training pipeline for TDE Classifier
 '''
 
 import pandas as pd
@@ -14,26 +14,24 @@ from sklearn.metrics import f1_score, classification_report
 
 from src.data_loader import load_lightcurves
 from src.features import apply_deextinction, extract_features
-from src.model_factory import get_model
-from config import DATA_DIR, MODELS_DIR, MODEL_PATH, SCORE_PATH, TRAIN_LOG, CURRENT_MODEL_NAME, RANDOM_SEED, TEST_SIZE
+from src.machine_learning.model_factory import get_model 
+from config import DATA_DIR, MODELS_DIR, MODEL_PATH, SCORE_PATH, TRAIN_LOG_PATH, MODEL_CONFIG
 
-def main():
-    # 0. Argument Parsing
-    parser = argparse.ArgumentParser(description="Train TDE Classifier")
-    parser.add_argument('--model', type=str, default=CURRENT_MODEL_NAME, help="Model type to train (e.g., 'random_forest', 'logistic_regression')")
-    args = parser.parse_args()
-    
-    # Use the argument if provided, otherwise fall back to config default
-    selected_model_name = args.model
-    print(f"--- Starting Pipeline with Model: {selected_model_name} ---")
+def run_training(model_name=None):
+    """
+    Executes the full training pipeline using the specified model architecture.
+    """
+    # Fallback to config default if no model name is provided
+    if model_name is None:
+        model_name = MODEL_CONFIG['default_model']
+
+    print(f"--- Starting Pipeline with Model: {model_name} ---")
 
     # 1. Load Log Data
     print("Loading Train Log...")
+    train_log = pd.read_csv(TRAIN_LOG_PATH)
 
-    log_path = os.path.join(DATA_DIR, TRAIN_LOG)
-    train_log = pd.read_csv(log_path)
-
-    # 2. Load Lightcurves
+    # 2. Load Lightcurves (Auto-checks for cached file)
     lc_df = load_lightcurves(train_log, dataset_type='train')
 
     # 3. Preprocessing
@@ -51,11 +49,15 @@ def main():
 
     # 7. Split & Train
     print("Training Model...")
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = TEST_SIZE, random_state = RANDOM_SEED)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, 
+        test_size=MODEL_CONFIG['test_size'], 
+        random_state=MODEL_CONFIG['random_seed']
+    )
 
-    # Get model from factory using the SELECTED name
+    # Get model from factory
     try:
-        model = get_model(selected_model_name)
+        model = get_model(model_name)
     except ValueError as e:
         print(f"Error: {e}")
         return
@@ -66,7 +68,7 @@ def main():
     y_pred = model.predict(X_val)
     score = f1_score(y_val, y_pred)
 
-    print(f"\nValidation F1 Score ({selected_model_name}): {score:.4f}")
+    print(f"\nValidation F1 Score ({model_name}): {score:.4f}")
     print(classification_report(y_val, y_pred))
 
     # 9. Save Model
@@ -78,7 +80,7 @@ def main():
 
     # Save Archive Model
     date_str = datetime.now().strftime("%Y-%m-%d")
-    archive_filename = f"{selected_model_name}_{date_str}_{score:.4f}.pkl"
+    archive_filename = f"{model_name}_{date_str}_{score:.4f}.pkl"
     archive_path = os.path.join(MODELS_DIR, archive_filename)
     
     joblib.dump(model, archive_path)
@@ -87,6 +89,3 @@ def main():
     # 10. Save Score
     with open(SCORE_PATH, 'w') as f:
         f.write(str(score))
-
-if __name__ == "__main__":
-    main()
