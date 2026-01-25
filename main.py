@@ -18,8 +18,7 @@ def main():
     parser.add_argument('--predict', action='store_true', help="Run the prediction pipeline")
     
     # Configuration arguments
-    parser.add_argument('--model', type=str, default=MODEL_CONFIG['default_model'], 
-                        help=f"Model to use (default: {MODEL_CONFIG['default_model']})")
+    parser.add_argument('--model', type=str, default=MODEL_CONFIG['default_model'], help=f"Model to use (default: {MODEL_CONFIG['default_model']})")
 
     args = parser.parse_args()
 
