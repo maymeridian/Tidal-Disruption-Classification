@@ -142,8 +142,8 @@ def train_individual_model(X_train, y_train, X_val, y_val,
 
     model = TestNN(input_dim=X_train.shape[1], hidden_dim=hidden_dim).to(device)
     
-    # increase weight decay to prevent overfitting
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.05)
+    # weight decay to prevent overfitting
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.0001)
     loss_fn = FocalLoss(alpha=alpha, gamma=gamma)
 
     best_val_loss = float('inf')
