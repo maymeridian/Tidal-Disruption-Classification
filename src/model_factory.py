@@ -27,7 +27,7 @@ def get_model(model_name):
     elif model_name == 'hist_gradient_boosting':
         return HistGradientBoostingClassifier(max_iter=100, learning_rate=0.1, max_depth=10, class_weight='balanced', random_state = RANDOM_SEED)
         
-    # Add new models here as elif blocks...
-    
+    # elif model_name == 'muon_optimizer':
+
     else:
         raise ValueError(f"Model '{model_name}' not recognized in model_factory.py")
