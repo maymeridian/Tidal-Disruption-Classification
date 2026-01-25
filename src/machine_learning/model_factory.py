@@ -1,11 +1,12 @@
 '''
 src/machine_learning/model_factory.py
 Author: maia.advance, maymeridian
-Description: Factory pattern using Class Weights (Best for tiny datasets).
+Description: Factory pattern using Class Weights. Now includes CatBoost.
 '''
 
 import numpy as np
 from xgboost import XGBClassifier
+from catboost import CatBoostClassifier  # <--- NEW IMPORT
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 from config import MODEL_CONFIG
@@ -17,7 +18,27 @@ def get_model(model_name, scale_pos_weight=1.0):
     seed = MODEL_CONFIG['random_seed']
 
     if model_name == 'xgboost':
-        return XGBClassifier(n_estimators=200, max_depth=2, learning_rate=0.05, eval_metric='logloss', scale_pos_weight=scale_pos_weight, min_child_weight=2, random_state=seed)
+        return XGBClassifier(
+            n_estimators=200, 
+            max_depth=2, 
+            learning_rate=0.05, 
+            eval_metric='logloss', 
+            scale_pos_weight=scale_pos_weight, 
+            min_child_weight=2, 
+            random_state=seed
+        )
+
+    elif model_name == 'catboost':
+        return CatBoostClassifier(
+            iterations=500,
+            depth=3,  # Shallow depth to prevent overfitting on tiny data
+            learning_rate=0.05,
+            loss_function='Logloss',
+            scale_pos_weight=scale_pos_weight,
+            random_seed=seed,
+            verbose=0,  # Keep it quiet
+            allow_writing_files=False # Stop it from making 'catboost_info' folders
+        )
         
     else:
         raise ValueError(f"Model '{model_name}' not recognized.")
@@ -39,8 +60,6 @@ def train_with_cv(model_name, X, y):
         y_train_fold, y_val_fold = y.iloc[train_index], y.iloc[val_index]
         
         # CALCULATE DYNAMIC WEIGHT
-        # If we have 150 non-TDEs and 6 TDEs: Weight = 150 / 6 = 25.0
-        # This tells the model: "Finding a TDE is 25x more important."
         n_pos = y_train_fold.sum()
         n_neg = len(y_train_fold) - n_pos
         scale_weight = n_neg / n_pos if n_pos > 0 else 1.0
@@ -56,7 +75,8 @@ def train_with_cv(model_name, X, y):
         
         for thresh in np.arange(0.1, 0.95, 0.05):
             preds_fold = (probs_val >= thresh).astype(int)
-            score = f1_score(y_val_fold, preds_fold, zero_division = 0) # type: ignore
+            # type: ignore to silence linter about zero_division int vs str
+            score = f1_score(y_val_fold, preds_fold, zero_division=0) # type: ignore
 
             if score > best_f1_fold:
                 best_f1_fold = score
@@ -78,7 +98,6 @@ def train_with_cv(model_name, X, y):
     # FINAL PRODUCTION TRAINING
     print("\n--- Training Final Production Model (100% Data) ---")
     
-    # Calculate final weight on full dataset
     n_pos_all = y.sum()
     n_neg_all = len(y) - n_pos_all
     final_weight = n_neg_all / n_pos_all

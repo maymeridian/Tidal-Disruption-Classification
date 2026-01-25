@@ -5,3 +5,4 @@ extinction
 joblib
 matplotlib
 xgboost
+catboost
