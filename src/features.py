@@ -25,8 +25,16 @@ def apply_deextinction(df, log_df):
     print("Applying De-extinction...")
 
     if 'EBV' not in df.columns:
-        ebv_map = log_df.set_index('object_id')['EBV']
-        df['EBV'] = df['object_id'].map(ebv_map)
+        # User confirmed 'EBV' is in the log
+        if 'EBV' in log_df.columns:
+            ebv_map = log_df.set_index('object_id')['EBV']
+            df['EBV'] = df['object_id'].map(ebv_map)
+        else:
+            # Fallback if somehow missing
+            print("Warning: EBV column not found. Skipping de-extinction.")
+            df['Flux_Corrected'] = df['Flux']
+            df['Flux_err_Corrected'] = df['Flux_err']
+            return df
 
     unique_filters = list(FILTER_WAVELENGTHS.keys())
     unique_wls = np.array([FILTER_WAVELENGTHS[f] for f in unique_filters], dtype=float)
@@ -53,7 +61,7 @@ def apply_quality_cuts(lc_df):
         safe_err = lc_df['Flux_err'].replace(0, 1e-5)
         lc_df['SNR'] = lc_df['Flux'] / safe_err
 
-    # RELAXED THRESHOLDS: SNR > 3, Flux > 10
+    # RELAXED THRESHOLDS for MALLORN Challenge
     valid_mask = (lc_df['SNR'] > 3) & (lc_df['Flux'] > 10)
     valid_points = lc_df[valid_mask]
 
@@ -74,13 +82,16 @@ def fit_2d_gp(obj_df):
         y = obj_df['Flux'].values
         y_err = obj_df['Flux_err'].values
 
-    X = np.column_stack([obj_df['Time (MJD)'].values, obj_df['Filter'].map(FILTER_WAVELENGTHS).values])
+    X = np.column_stack([
+        obj_df['Time (MJD)'].values,
+        obj_df['Filter'].map(FILTER_WAVELENGTHS).values
+    ])
 
     y_scale = np.max(np.abs(y)) if np.max(np.abs(y)) > 0 else 1.0
     y_norm = y / y_scale
     y_err_norm = y_err / y_scale
 
-    # Structure is now strictly: ConstantKernel * Matern
+    # Structure: ConstantKernel * Matern 3/2
     kernel = ConstantKernel(1.0, constant_value_bounds=(1e-5, 1e5)) * Matern(length_scale=[100, 6000], length_scale_bounds=[(1e-2, 1e5), (1e-2, 1e5)], nu=1.5)
 
     gp = GaussianProcessRegressor(kernel=kernel, alpha=y_err_norm**2, n_restarts_optimizer=2, random_state=42)
@@ -98,16 +109,12 @@ def get_gp_features(obj_id, obj_df):
         return None
 
     # PARAMETER EXTRACTION
-    # Kernel is Product(ConstantKernel, Matern)
     params = gp.kernel_.get_params()
     
     try:
-        # Access parameters for the simpler kernel structure
-        # k1 = ConstantKernel, k2 = Matern
         length_scales = params['k2__length_scale']
         amplitude = np.sqrt(params['k1__constant_value']) * y_scale
     except KeyError:
-        # Fallback if scikit-learn version swaps order
         try:
              length_scales = params['k1__length_scale']
              amplitude = np.sqrt(params['k2__constant_value']) * y_scale
@@ -158,7 +165,9 @@ def get_gp_features(obj_id, obj_df):
         val = gp.predict([[t, FILTER_WAVELENGTHS[band]]])[0] * y_scale
         return val if val > 0 else 1e-5
 
+    # --- CRITICAL FIX: Calculating BOTH peaks ---
     gr_peak = -2.5 * np.log10(get_val(peak_time, 'g') / get_val(peak_time, 'r'))
+    ri_peak = -2.5 * np.log10(get_val(peak_time, 'r') / get_val(peak_time, 'i'))
     
     t_pre_mid = peak_time - (rise_time / 2)
     t_post_mid = peak_time + (fade_time / 2)
@@ -181,12 +190,14 @@ def get_gp_features(obj_id, obj_df):
         'mean_ri_pre': ri_pre,
         'mean_ri_post': ri_post,
         'slope_gr_pre': (gr_peak - gr_pre) / (rise_time/2) if rise_time > 0 else 0,
-        'slope_gr_post': (gr_post - gr_peak) / (fade_time/2) if fade_time > 0 else 0
+        'slope_gr_post': (gr_post - gr_peak) / (fade_time/2) if fade_time > 0 else 0,
+        'slope_ri_pre': (ri_peak - ri_pre) / (rise_time/2) if rise_time > 0 else 0,
+        'slope_ri_post': (ri_post - ri_peak) / (fade_time/2) if fade_time > 0 else 0
     }
 
 def extract_features(lc_df, log_df):
     """
-    Main loop: Quality Cuts -> GP Fitting -> Feature Table
+    Main loop: Quality Cuts -> GP Fitting -> Feature Table -> Merge Z/Z_err
     """
     print("Extracting Features using 2D GP (Time + Wavelength)...")
 
@@ -207,5 +218,25 @@ def extract_features(lc_df, log_df):
 
     features_df = pd.DataFrame(features_list)
     features_df = features_df.fillna(0)
+
+    # MERGE REDSHIFT (Z)
+    # Using 'Z' and 'Z_err' as specified in your logs.
+    if 'Z' in log_df.columns:
+        print("Merging Redshift (Z) and Error (Z_err)...")
+        cols_to_merge = ['object_id', 'Z']
+        
+        # Include Z_err if it exists (useful feature for uncertainty)
+        if 'Z_err' in log_df.columns:
+            cols_to_merge.append('Z_err')
+            
+        meta = log_df[cols_to_merge].copy()
+        
+        # Rename to consistent names for the model (optional, but good practice)
+        rename_map = {'Z': 'redshift'}
+        if 'Z_err' in cols_to_merge:
+            rename_map['Z_err'] = 'redshift_err'
+            
+        meta = meta.rename(columns=rename_map)
+        features_df = features_df.merge(meta, on='object_id', how='left')
 
     return features_df
