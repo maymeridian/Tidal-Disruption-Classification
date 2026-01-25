@@ -22,7 +22,7 @@ def run_prediction():
     test_log = pd.read_csv(TEST_LOG_PATH)
 
     # 2. Load Test Lightcurves
-    lc_df = load_lightcurves(test_log, dataset_type='test')
+    lc_df = load_lightcurves(dataset_type='test')
 
     # 3. Preprocessing
     lc_df = apply_deextinction(lc_df, test_log)

@@ -32,7 +32,7 @@ def run_training(model_name=None):
     train_log = pd.read_csv(TRAIN_LOG_PATH)
 
     # 2. Load Lightcurves (Auto-checks for cached file)
-    lc_df = load_lightcurves(train_log, dataset_type='train')
+    lc_df = load_lightcurves(dataset_type='train')
 
     # 3. Preprocessing
     lc_df = apply_deextinction(lc_df, train_log)

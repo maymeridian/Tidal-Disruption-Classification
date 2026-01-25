@@ -1,25 +1,18 @@
 '''
 src/data_loader.py
 Author: maia.advance, maymeridian
-Description: efficient loading of lightcurve data with caching.
+Description: Efficient loading of lightcurve data with caching and auto-log detection.
 '''
 
 import pandas as pd 
 import os
-from config import DATA_DIR
+from config import DATA_DIR, TRAIN_LOG_PATH, TEST_LOG_PATH
 
-def load_lightcurves(log_df, dataset_type='train', data_dir=DATA_DIR):
+def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
     """
-    Loads lightcurve data. 
-    
-    OPTIMIZATION:
-    1. Checks if a combined file (e.g., 'train_all_full_lightcurves.csv') exists in data_dir.
-    2. If YES: Loads and returns that file immediately (Fast).
-    3. If NO: Iterates through split folders, combines them, saves the combined file to disk, 
-       and then returns the data.
+    Loads lightcurve data. Automatically determines which log to use based on dataset_type.
     
     Args:
-        log_df (pd.DataFrame): The train or test log containing 'split' info.
         dataset_type (str): 'train' or 'test'.
         data_dir (str): Root data directory. Defaults to DATA_DIR from config.py.
     """
@@ -34,8 +27,20 @@ def load_lightcurves(log_df, dataset_type='train', data_dir=DATA_DIR):
         print("Loading directly (skipping split folders)...")
         return pd.read_csv(combined_path)
 
-    # 3. If not found, build it from the split folders
+    # 3. If not found, we need the log to find the splits.
     print(f"Cached file not found. Building {combined_filename} from splits...")
+
+    if dataset_type == 'train':
+        log_path = TRAIN_LOG_PATH
+    elif dataset_type == 'test':
+        log_path = TEST_LOG_PATH
+    else:
+        raise ValueError(f"Unknown dataset_type: {dataset_type}")
+
+    if not os.path.exists(log_path):
+        raise FileNotFoundError(f"Log file not found at {log_path}")
+
+    log_df = pd.read_csv(log_path)
     
     lightcurve_frames = []
     unique_splits = log_df['split'].unique()
@@ -43,7 +48,6 @@ def load_lightcurves(log_df, dataset_type='train', data_dir=DATA_DIR):
     print(f"Processing {len(unique_splits)} split folders for {dataset_type}...")
 
     for split_name in unique_splits:
-        # Path: data/split_##/train_full_lightcurves.csv
         chunk_name = f"{dataset_type}_full_lightcurves.csv"
         chunk_path = os.path.join(data_dir, split_name, chunk_name)
 
