@@ -10,28 +10,23 @@ import joblib
 from datetime import datetime
 
 from src.data_loader import load_lightcurves
-from src.features import apply_deextinction, extract_features
-from config import DATA_DIR, MODEL_PATH, SCORE_PATH, RESULTS_DIR, TEST_LOG_PATH
+from src.features import extract_features 
+from config import MODEL_PATH, SCORE_PATH, RESULTS_DIR, TEST_LOG_PATH
 
 def run_prediction():
     """
     Executes the prediction pipeline using the saved model at MODEL_PATH.
     Applies the optimized threshold found during training.
     """
-    # 1. Load Test Log
-    print("Loading Test Log...")
-    test_log = pd.read_csv(TEST_LOG_PATH)
-
-    # 2. Load Test Lightcurves
+    
+    # 1. Load Test Lightcurves
+    print("Loading Test Lightcurves...")
     lc_df = load_lightcurves(dataset_type='test')
 
-    # 3. Preprocessing
-    lc_df = apply_deextinction(lc_df, test_log)
+    # 2. Extract Features 
+    features_df = extract_features(lc_df, dataset_type='test')
 
-    # 4. Feature Engineering 
-    features_df = extract_features(lc_df, test_log)
-
-    # 5. Load Model 
+    # 3. Load Model 
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model not found at {MODEL_PATH}. Run training first!")
         return
@@ -39,7 +34,7 @@ def run_prediction():
     print(f"Loading model from {MODEL_PATH}...")
     model = joblib.load(MODEL_PATH)
 
-    # 6. Load Optimized Threshold
+    # 4. Load Optimized Threshold
     thresh_path = os.path.join(os.path.dirname(SCORE_PATH), 'threshold.txt')
     threshold = 0.5 # Default fallback
     if os.path.exists(thresh_path):
@@ -52,28 +47,34 @@ def run_prediction():
     else:
         print("Warning: Threshold file not found. Using default 0.5.")
 
-    # 7. Predict
+    # 5. Predict
+    # Drop object_id so the input shape matches the training data
     X_test = features_df.drop(columns=['object_id'])
-    print("Generating predictions...")
     
-    # Get Probabilities
+    print("Generating predictions...")
     y_probs = model.predict_proba(X_test)[:, 1]
     
     # Apply Threshold
     y_preds = (y_probs >= threshold).astype(int)
 
-    # 8. Create Submission DataFrame
-    submission = pd.DataFrame({
-        'object_id': features_df['object_id'], 
-        'prediction': y_preds,
-        'probability': y_probs  # Useful for debugging
-    })
+    # 6. Create Partial Submission DataFrame
+    # This only contains objects that survived the quality cuts in extract_features
+    submission_partial = pd.DataFrame({'object_id': features_df['object_id'], 'prediction': y_preds,'probability': y_probs})
 
-    # Include all objects from test_log (fill missing with 0)
-    final_submission = test_log[['object_id']].merge(submission, on='object_id', how='left')
+    # 7. Merge with Full Test Log
+    # We load the test log purely to get the complete list of object_ids.
+    # This ensures objects dropped by quality cuts are re-added with prediction 0.
+    print("Finalizing submission file...")
+    test_log = pd.read_csv(TEST_LOG_PATH)
+
+    # Left merge ensures every object in the original test set is present
+    final_submission = test_log[['object_id']].merge(submission_partial, on='object_id', how='left')
+    
+    # Fill NaN (objects we filtered out) with 0
     final_submission['prediction'] = final_submission['prediction'].fillna(0).astype(int)
-        
-    # 9. Construct Output Filename
+    final_submission['probability'] = final_submission['probability'].fillna(0.0)
+
+    # 8. Construct Output Filename
     f1_score_str = "0.000"
     if os.path.exists(SCORE_PATH):
         with open(SCORE_PATH, 'r') as f:
@@ -86,8 +87,7 @@ def run_prediction():
     os.makedirs(RESULTS_DIR, exist_ok=True)
     output_path = os.path.join(RESULTS_DIR, filename)
 
-    # Save only required columns for submission (usually just ID and prediction)
-    # Adjust columns if the challenge requires probability
+    # Save final submission
     final_submission[['object_id', 'prediction']].to_csv(output_path, index=False)
     
     print(f"Submission saved to {output_path}")

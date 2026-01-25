@@ -1,52 +1,39 @@
 '''
 src/machine_learning/train.py
 Author: maia.advance, maymeridian
-Description: Training pipeline for TDE Classifier using K-Fold CV and SMOTE.
+Description: Training pipeline. Clean, focused, and integrated with data_loader.
 '''
 
-import pandas as pd
 import os
 import joblib
 from datetime import datetime
 
-from src.data_loader import load_lightcurves
-from src.features import apply_deextinction, extract_features
+from src.data_loader import get_training_dataset
 from src.machine_learning.model_factory import train_with_cv 
-from config import DATA_DIR, MODELS_DIR, MODEL_PATH, SCORE_PATH, TRAIN_LOG_PATH, MODEL_CONFIG
+from config import MODELS_DIR, MODEL_PATH, SCORE_PATH, MODEL_CONFIG
 
 def run_training(model_name=None):
     """
     Executes the training pipeline.
-    Uses model_factory.train_with_cv to handle SMOTE and Cross-Validation logic.
     """
     if model_name is None:
         model_name = MODEL_CONFIG['default_model']
 
     print(f"--- Starting Pipeline with Model: {model_name} ---")
 
-    # 1. Load & Prep Data
-    print("Loading Data...")
-    train_log = pd.read_csv(TRAIN_LOG_PATH)
-    lc_df = load_lightcurves(dataset_type='train')
-    
-    # Preprocessing
-    lc_df = apply_deextinction(lc_df, train_log)
-    features_df = extract_features(lc_df, train_log)
-    full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
+    # 1. GET DATA
+    X, y = get_training_dataset()
 
-    X = full_df.drop(columns=['object_id', 'target'])
-    y = full_df['target']
-
-    # 2. RUN TRAINING (Using 5-Fold CV + SMOTE)
-    # This delegates the imbalance handling to the factory
+    # 2. RUN TRAINING (Using 5-Fold CV + Class Weights)
     model, score, threshold = train_with_cv(model_name, X, y)
 
     # 3. Feature Importance (Diagnostic)
     print("\n--- Feature Importance (Top 10) ---")
     if hasattr(model, 'feature_importances_'):
         importance = model.feature_importances_
-        for name, imp in sorted(zip(X.columns, importance), key=lambda x: x[1], reverse=True)[:10]:
-            print(f"{name}: {imp:.4f}")
+        if len(importance) == len(X.columns):
+            for name, imp in sorted(zip(X.columns, importance), key=lambda x: x[1], reverse=True)[:10]:
+                print(f"{name}: {imp:.4f}")
 
     # 4. Save Artifacts
     os.makedirs(MODELS_DIR, exist_ok=True)

@@ -1,16 +1,18 @@
 '''
 src/data_loader.py
 Author: maia.advance, maymeridian
-Description: Efficient loading of lightcurve data with caching and auto-log detection.
+Description: Efficient loading of lightcurve data with caching and automated dataset preparation.
 '''
 
-import pandas as pd 
+import pandas as pd
 import os
+from src.features import extract_features
 from config import DATA_DIR, TRAIN_LOG_PATH, TEST_LOG_PATH
 
 def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
     """
-    Loads lightcurve data. Automatically determines which log to use based on dataset_type.
+    Loads raw lightcurve data. Automatically determines which log to use based on dataset_type.
+    Uses caching to avoid re-stitching split files on every run.
     
     Args:
         dataset_type (str): 'train' or 'test'.
@@ -18,7 +20,7 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
     """
     
     # 1. Construct the path for the optimized "All" file
-    combined_filename = f"{dataset_type}_all_full_lightcurves.csv"
+    combined_filename = f"combined_curves/{dataset_type}_all_full_lightcurves.csv"
     combined_path = os.path.join(data_dir, combined_filename)
 
     # 2. Early Return: Check if the combined file already exists
@@ -69,3 +71,36 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
     print("Save complete.")
 
     return combined_df
+
+def get_training_dataset():
+    """
+    Orchestrates the entire data loading pipeline for training.
+    
+    1. Loads Raw Lightcurves (load_lightcurves)
+    2. Extracts Features or Loads Cache (extract_features)
+    3. Merges Target Labels from Log
+    
+    Returns:
+        X (pd.DataFrame): Feature matrix
+        y (pd.Series): Target labels
+    """
+    print("--- Preparing Training Dataset ---")
+    
+    # 1. Load Lightcurves
+    lc_df = load_lightcurves(dataset_type='train')
+    
+    # 2. Get Features (Handles caching & de-extinction internally)
+    # The dataset_type='train' argument tells it to look for PROCESSED_TRAINING_DATA_PATH
+    features_df = extract_features(lc_df, dataset_type='train')
+    
+    # 3. Merge Labels
+    print("Merging Target Labels...")
+    train_log = pd.read_csv(TRAIN_LOG_PATH)
+    
+    # Inner merge ensures we only train on objects we actually have features for
+    full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
+    
+    X = full_df.drop(columns=['object_id', 'target'])
+    y = full_df['target']
+    
+    return X, y

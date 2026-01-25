@@ -5,9 +5,6 @@ Description: Factory pattern using Class Weights (Best for tiny datasets).
 '''
 
 import numpy as np
-import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
@@ -21,12 +18,6 @@ def get_model(model_name, scale_pos_weight=1.0):
 
     if model_name == 'xgboost':
         return XGBClassifier(n_estimators=200, max_depth=2, learning_rate=0.05, eval_metric='logloss', scale_pos_weight=scale_pos_weight, min_child_weight=2, random_state=seed)
-        
-    elif model_name == 'logistic_regression':
-        return LogisticRegression(max_iter=2000, class_weight='balanced', random_state=seed)
-    
-    elif model_name == 'random_forest':
-        return RandomForestClassifier(n_estimators=100, max_depth=5, class_weight='balanced', random_state=seed)
         
     else:
         raise ValueError(f"Model '{model_name}' not recognized.")
@@ -65,7 +56,8 @@ def train_with_cv(model_name, X, y):
         
         for thresh in np.arange(0.1, 0.95, 0.05):
             preds_fold = (probs_val >= thresh).astype(int)
-            score = f1_score(y_val_fold, preds_fold, zero_division=0)
+            score = f1_score(y_val_fold, preds_fold, zero_division = 0) # type: ignore
+
             if score > best_f1_fold:
                 best_f1_fold = score
                 best_thresh_fold = thresh
