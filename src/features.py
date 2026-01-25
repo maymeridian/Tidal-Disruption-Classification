@@ -54,6 +54,7 @@ def apply_deextinction(df, log_df):
 def apply_quality_cuts(lc_df):
     """
     Filters objects based on quality criteria.
+    RELAXED for Test Set to avoid deleting faint TDEs.
     """
     print("Applying Quality Cuts...")
     
@@ -61,12 +62,21 @@ def apply_quality_cuts(lc_df):
         safe_err = lc_df['Flux_err'].replace(0, 1e-5)
         lc_df['SNR'] = lc_df['Flux'] / safe_err
 
-    # RELAXED THRESHOLDS for MALLORN Challenge
-    valid_mask = (lc_df['SNR'] > 3) & (lc_df['Flux'] > 10)
+    # --- OLD (TOO STRICT) ---
+    # valid_mask = (lc_df['SNR'] > 3) & (lc_df['Flux'] > 10)
+    
+    # --- NEW (PERMISSIVE) ---
+    # 1. Keep anything with positive flux (physics check)
+    # 2. Drop the SNR requirement (let the model handle noise)
+    valid_mask = (lc_df['Flux'] > 0) 
+    
     valid_points = lc_df[valid_mask]
 
     counts = valid_points.groupby('object_id').size()
-    keep_ids = counts[counts >= 3].index
+    
+    # Lower requirement from 3 points to 2 points
+    # (GP needs 2 points minimum to draw a line)
+    keep_ids = counts[counts >= 2].index
 
     print(f"Retained {len(keep_ids)} objects out of {lc_df['object_id'].nunique()}.")
     return lc_df[lc_df['object_id'].isin(keep_ids)].copy()
