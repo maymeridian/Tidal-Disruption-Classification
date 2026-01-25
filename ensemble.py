@@ -19,9 +19,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using: {device.type}")
 
 # for weighted average in ensemble stage
-BIAS_WEIGHT_NN = 0.5
-BIAS_WEIGHT_XGB = 0.5
+BIAS_WEIGHT_NN = 0.4
+BIAS_WEIGHT_XGB = 0.6
+NUM_EPOCHS = 3000
+LEARNING_RATE = 5e-5
 
+THRESHOLD = 0.7
 
 # load or process training data
 def load_process_training_data():
@@ -127,7 +130,7 @@ class TestNN(nn.Module):
 
 
 def train_individual_model(X_train, y_train, X_val, y_val, 
-                          hidden_dim=64, alpha=0.25, gamma=2.0, epochs=100, lr=3e-4):
+                          hidden_dim=64, alpha=0.25, gamma=2.0, epochs=100, lr=LEARNING_RATE):
 
     # scale data
     scaler = StandardScaler()
@@ -143,7 +146,7 @@ def train_individual_model(X_train, y_train, X_val, y_val,
     model = TestNN(input_dim=X_train.shape[1], hidden_dim=hidden_dim).to(device)
     
     # weight decay to prevent overfitting
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.0001)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=0.0001)
     loss_fn = FocalLoss(alpha=alpha, gamma=gamma)
 
     best_val_loss = float('inf')
@@ -170,7 +173,7 @@ def train_individual_model(X_train, y_train, X_val, y_val,
                 val_logits = model(X_val_tensor)
                 val_loss = loss_fn(val_logits, y_val_tensor)
                 val_probs_temp = torch.sigmoid(val_logits).cpu().numpy()
-                val_predictions = (val_probs_temp > 0.3).astype(float)
+                val_predictions = (val_probs_temp > THRESHOLD).astype(float)
                 
                 acc = (val_predictions == y_val.reshape(-1, 1)).mean()
                 
@@ -188,7 +191,7 @@ def train_individual_model(X_train, y_train, X_val, y_val,
                     tde_recall = precision = f1 = val_auc = 0.0
                 
                 extra_space = ''
-                if not (epoch+1) % 1000 == 0: 
+                if epoch+1 < 1000 == 0: 
                     extra_space = ' '
 
                 print(f"  Epoch {epoch+1} {extra_space}| Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f} | Acc: {acc:.4f} | Recall: {tde_recall:.4f} | Prec: {precision:.4f} | F1: {f1:.4f} | AUC: {val_auc:.4f}")
@@ -222,8 +225,8 @@ def train_individual_model(X_train, y_train, X_val, y_val,
 def hyperparameter_calibration(X_train, y_train, X_val, y_val):
     """Test different hyperparameter combinations"""
     alpha_values = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35] 
-    gamma_values = [1.0, 1.5, 2.0, 2.5]
-    hidden_dims = [32, 64, 128, 256, 512]
+    gamma_values = [1.0, 1.5, 1.75, 2.0, 2.25, 2.5]
+    hidden_dims = [32, 64, 128, 256, 512, 1024, 2048]
     
     results = []
     print("\n=== Calibrating Hyperparameters ===\n")
@@ -236,8 +239,8 @@ def hyperparameter_calibration(X_train, y_train, X_val, y_val):
             hidden_dim=hidden_dim, 
             alpha=alpha,
             gamma=gamma,
-            epochs=300,
-            lr=1e-4
+            epochs=NUM_EPOCHS,
+            lr=LEARNING_RATE
         )
         results.append({
             'hidden_dim': hidden_dim,
@@ -336,7 +339,7 @@ def predict_test_set(neural_network_model, xgb_model, scaler, test_features_df, 
 
     xgb_probs = xgb_model.predict_proba(X_test)[:,1]
     ensemble_probs = (neural_network_probs * BIAS_WEIGHT_NN + xgb_probs * BIAS_WEIGHT_XGB)    
-    predictions = (ensemble_probs >= 0.3).astype(int) 
+    predictions = (ensemble_probs >= THRESHOLD).astype(int) 
     submission = pd.DataFrame({
         'object_id': test_features_df['object_id'],
         'prediction': predictions
