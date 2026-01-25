@@ -1,26 +1,33 @@
 '''
 src/features.py
 Author: maia.advance, maymeridian
-Description: Feature extraction including Flux, SNR, Colors, and Metadata.
+Description: Feature extraction combining 'Jurassic Park' de-extinction with 2D Gaussian Processes.
 '''
 
 import numpy as np
 import pandas as pd
+import warnings
+
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from extinction import fitzpatrick99
 from config import FILTER_WAVELENGTHS
+
+# Suppress GP convergence warnings to keep terminal clean
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 def apply_deextinction(df, log_df):
     """
     Applies the 'Jurassic Park' de-extinction logic.
+    Corrects both Flux and Flux_err so SNR is preserved.
     """
     print("Applying De-extinction...")
 
-    # 1. Map EBV (Dust extinction)
     if 'EBV' not in df.columns:
         ebv_map = log_df.set_index('object_id')['EBV']
         df['EBV'] = df['object_id'].map(ebv_map)
 
-    # 2. Calculate Correction Factors
     unique_filters = list(FILTER_WAVELENGTHS.keys())
     unique_wls = np.array([FILTER_WAVELENGTHS[f] for f in unique_filters], dtype=float)
     
@@ -29,63 +36,176 @@ def apply_deextinction(df, log_df):
 
     a_lambda = df['Filter'].map(ext_map) * (df['EBV'] * 3.1)
 
-    # 3. Apply Correction
-    df['Flux_Corrected'] = df['Flux'] * 10**(a_lambda / 2.5)
+    correction_factor = 10**(a_lambda / 2.5)
+    
+    df['Flux_Corrected'] = df['Flux'] * correction_factor
+    df['Flux_err_Corrected'] = df['Flux_err'] * correction_factor
 
     return df
 
+def apply_quality_cuts(lc_df):
+    """
+    Filters objects based on quality criteria.
+    """
+    print("Applying Quality Cuts...")
+    
+    if 'SNR' not in lc_df.columns:
+        safe_err = lc_df['Flux_err'].replace(0, 1e-5)
+        lc_df['SNR'] = lc_df['Flux'] / safe_err
+
+    # RELAXED THRESHOLDS: SNR > 3, Flux > 10
+    valid_mask = (lc_df['SNR'] > 3) & (lc_df['Flux'] > 10)
+    valid_points = lc_df[valid_mask]
+
+    counts = valid_points.groupby('object_id').size()
+    keep_ids = counts[counts >= 3].index
+
+    print(f"Retained {len(keep_ids)} objects out of {lc_df['object_id'].nunique()}.")
+    return lc_df[lc_df['object_id'].isin(keep_ids)].copy()
+
+def fit_2d_gp(obj_df):
+    """
+    Fits a 2D Gaussian Process (Time, Wavelength) to the light curve.
+    """
+    if 'Flux_Corrected' in obj_df.columns:
+        y = obj_df['Flux_Corrected'].values
+        y_err = obj_df['Flux_err_Corrected'].values
+    else:
+        y = obj_df['Flux'].values
+        y_err = obj_df['Flux_err'].values
+
+    X = np.column_stack([obj_df['Time (MJD)'].values, obj_df['Filter'].map(FILTER_WAVELENGTHS).values])
+
+    y_scale = np.max(np.abs(y)) if np.max(np.abs(y)) > 0 else 1.0
+    y_norm = y / y_scale
+    y_err_norm = y_err / y_scale
+
+    # Structure is now strictly: ConstantKernel * Matern
+    kernel = ConstantKernel(1.0, constant_value_bounds=(1e-5, 1e5)) * Matern(length_scale=[100, 6000], length_scale_bounds=[(1e-2, 1e5), (1e-2, 1e5)], nu=1.5)
+
+    gp = GaussianProcessRegressor(kernel=kernel, alpha=y_err_norm**2, n_restarts_optimizer=2, random_state=42)
+    gp.fit(X, y_norm)
+
+    return gp, y_scale
+
+def get_gp_features(obj_id, obj_df):
+    """
+    Extracts features from the GP model.
+    """
+    try:
+        gp, y_scale = fit_2d_gp(obj_df)
+    except Exception:
+        return None
+
+    # PARAMETER EXTRACTION
+    # Kernel is Product(ConstantKernel, Matern)
+    params = gp.kernel_.get_params()
+    
+    try:
+        # Access parameters for the simpler kernel structure
+        # k1 = ConstantKernel, k2 = Matern
+        length_scales = params['k2__length_scale']
+        amplitude = np.sqrt(params['k1__constant_value']) * y_scale
+    except KeyError:
+        # Fallback if scikit-learn version swaps order
+        try:
+             length_scales = params['k1__length_scale']
+             amplitude = np.sqrt(params['k2__constant_value']) * y_scale
+        except:
+             length_scales = [0, 0]
+             amplitude = 0
+
+    ls_time = length_scales[0] if len(length_scales) > 0 else 0
+    ls_wave = length_scales[1] if len(length_scales) > 1 else 0
+
+    # Grid Prediction for Peak finding
+    t_min, t_max = obj_df['Time (MJD)'].min(), obj_df['Time (MJD)'].max()
+    t_grid = np.linspace(t_min, t_max, 100)
+    g_wave = FILTER_WAVELENGTHS['g']
+    
+    X_pred_g = np.column_stack([t_grid, np.full_like(t_grid, g_wave)])
+    y_pred_g, _ = gp.predict(X_pred_g, return_std=True)
+    y_pred_g *= y_scale
+
+    peak_idx = np.argmax(y_pred_g)
+    peak_time = t_grid[peak_idx]
+    peak_flux = y_pred_g[peak_idx]
+
+    threshold = peak_flux / 2.512
+    
+    # Rise Time
+    pre_peak = y_pred_g[:peak_idx]
+    t_pre = t_grid[:peak_idx]
+
+    if len(pre_peak) > 0 and np.any(pre_peak < threshold):
+        drop_idx = np.where(pre_peak < threshold)[0][-1]
+        rise_time = peak_time - t_pre[drop_idx]
+    else:
+        rise_time = peak_time - t_min
+
+    # Fade Time
+    post_peak = y_pred_g[peak_idx:]
+    t_post = t_grid[peak_idx:]
+
+    if len(post_peak) > 0 and np.any(post_peak < threshold):
+        drop_idx = np.where(post_peak < threshold)[0][0]
+        fade_time = t_post[drop_idx] - peak_time
+    else:
+        fade_time = t_max - peak_time
+
+    # Colors
+    def get_val(t, band):
+        val = gp.predict([[t, FILTER_WAVELENGTHS[band]]])[0] * y_scale
+        return val if val > 0 else 1e-5
+
+    gr_peak = -2.5 * np.log10(get_val(peak_time, 'g') / get_val(peak_time, 'r'))
+    
+    t_pre_mid = peak_time - (rise_time / 2)
+    t_post_mid = peak_time + (fade_time / 2)
+
+    gr_pre = -2.5 * np.log10(get_val(t_pre_mid, 'g') / get_val(t_pre_mid, 'r'))
+    gr_post = -2.5 * np.log10(get_val(t_post_mid, 'g') / get_val(t_post_mid, 'r'))
+    
+    ri_pre = -2.5 * np.log10(get_val(t_pre_mid, 'r') / get_val(t_pre_mid, 'i'))
+    ri_post = -2.5 * np.log10(get_val(t_post_mid, 'r') / get_val(t_post_mid, 'i'))
+
+    return {
+        'object_id': obj_id,
+        'amplitude': amplitude,
+        'length_scale_time': ls_time,
+        'length_scale_wave': ls_wave,
+        'rise_time': rise_time,
+        'fade_time': fade_time,
+        'mean_gr_pre': gr_pre,
+        'mean_gr_post': gr_post,
+        'mean_ri_pre': ri_pre,
+        'mean_ri_post': ri_post,
+        'slope_gr_pre': (gr_peak - gr_pre) / (rise_time/2) if rise_time > 0 else 0,
+        'slope_gr_post': (gr_post - gr_peak) / (fade_time/2) if fade_time > 0 else 0
+    }
+
 def extract_features(lc_df, log_df):
     """
-    Turns lightcurves into a single row of features, including:
-    - Flux Stats
-    - SNR Stats
-    - Colors (Temperature)
-    - Duration
-    - Redshift (Z)
+    Main loop: Quality Cuts -> GP Fitting -> Feature Table
     """
-    print("Extracting Features (Flux, SNR, Colors, Z)...")
+    print("Extracting Features using 2D GP (Time + Wavelength)...")
 
-    # 1. Pre-calculation
-    safe_err = lc_df['Flux_err'].replace(0, 1e-5) 
-    lc_df['SNR'] = lc_df['Flux'] / safe_err
-
-    # 2. Basic Stats (Flux & SNR) (Group by object and filter)
-    flux_feats = lc_df.groupby(['object_id', 'Filter'])['Flux_Corrected'].agg(['mean', 'max', 'std']).unstack()
-    flux_feats.columns = [f'flux_{stat}_{filt}' for stat, filt in flux_feats.columns]
-
-    snr_feats = lc_df.groupby(['object_id', 'Filter'])['SNR'].agg(['max', 'mean']).unstack()
-    snr_feats.columns = [f'snr_{stat}_{filt}' for stat, filt in snr_feats.columns]
-
-    # 3. Temporal Features (Duration) (Length of Object Visibility (Max time - Min time))
-    duration_df = lc_df.groupby('object_id')['Time (MJD)'].agg(np.ptp) # ptp = peak to peak (max - min)
-    duration_df.name = 'duration'
-
-    # 4. Merge Basic Features 
-    features = pd.concat([flux_feats, snr_feats, duration_df], axis=1)
-    features = features.fillna(0) # Fill missing filters with 0
-
-    # 5. Color Features (The "Temperature")
-    # Color = Magnitude difference, or in Flux space: Ratio.
-    # Flux differences for stability: (Mean Flux u - Mean Flux r)
-    # TDEs are blue, so u and g should be bright compared to r, i, z.
+    lc_clean = apply_quality_cuts(lc_df)
     
-    # If an object is missing 'u', its flux is 0 (from fillna above), so color is -r (valid).
-    if 'flux_mean_u' in features.columns and 'flux_mean_r' in features.columns:
-        features['color_u_r'] = features['flux_mean_u'] - features['flux_mean_r']
+    features_list = []
+    unique_ids = lc_clean['object_id'].unique()
     
-    if 'flux_mean_g' in features.columns and 'flux_mean_i' in features.columns:
-        features['color_g_i'] = features['flux_mean_g'] - features['flux_mean_i']
+    for i, obj_id in enumerate(unique_ids):
+        if i % 100 == 0:
+            print(f"Processed {i}/{len(unique_ids)} objects...")
+            
+        obj_df = lc_clean[lc_clean['object_id'] == obj_id]
+        feats = get_gp_features(obj_id, obj_df)
 
-    # 6. Add Metadata (Redshift)
-    # Merge Z and Z_err from the log file.
-    # Reset index to make 'object_id' a column again for merging
-    features = features.reset_index()
-    meta_features = log_df[['object_id', 'Z', 'Z_err']].copy()
-    
-    # Z_err might be NaN in training data, fill with 0
-    meta_features['Z_err'] = meta_features['Z_err'].fillna(0)
-    
-    # Finally, merge the features
-    final_features = features.merge(meta_features, on='object_id', how='left')
+        if feats:
+            features_list.append(feats)
 
-    return final_features
+    features_df = pd.DataFrame(features_list)
+    features_df = features_df.fillna(0)
+
+    return features_df

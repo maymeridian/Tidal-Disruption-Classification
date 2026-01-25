@@ -52,12 +52,19 @@ def run_training(model_name=None):
     X_train, X_val, y_train, y_val = train_test_split(
         X, y, 
         test_size=MODEL_CONFIG['test_size'], 
-        random_state=MODEL_CONFIG['random_seed']
+        random_state=MODEL_CONFIG['random_seed'],
+        stratify=y # IMPORTANT: Ensure TDEs are split evenly between train/val
     )
 
-    # Get model from factory
+    # Print class balance
+    num_tdes = y_train.sum()
+    print(f"   -> Training Set: {len(y_train)} total, {num_tdes} TDEs.")
+    if num_tdes < 10:
+        print("   WARNING: Extremely low TDE count. Model may struggle.")
+
+    # Get model from factory (PASS y_train NOW)
     try:
-        model = get_model(model_name)
+        model = get_model(model_name, y_train=y_train)
     except ValueError as e:
         print(f"Error: {e}")
         return
