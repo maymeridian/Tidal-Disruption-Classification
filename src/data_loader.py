@@ -72,7 +72,7 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
 
     return combined_df
 
-def get_training_dataset():
+def get_prepared_dataset(dataset_type='train'):
     """
     Orchestrates the entire data loading pipeline for training.
     
@@ -84,23 +84,41 @@ def get_training_dataset():
         X (pd.DataFrame): Feature matrix
         y (pd.Series): Target labels
     """
-    print("--- Preparing Training Dataset ---")
-    
-    # 1. Load Lightcurves
-    lc_df = load_lightcurves(dataset_type='train')
-    
-    # 2. Get Features (Handles caching & de-extinction internally)
-    # The dataset_type='train' argument tells it to look for PROCESSED_TRAINING_DATA_PATH
-    features_df = extract_features(lc_df, dataset_type='train')
-    
-    # 3. Merge Labels
-    print("Merging Target Labels...")
-    train_log = pd.read_csv(TRAIN_LOG_PATH)
-    
-    # Inner merge ensures we only train on objects we actually have features for
-    full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
-    
-    X = full_df.drop(columns=['object_id', 'target'])
-    y = full_df['target']
-    
-    return X, y
+    if dataset_type == 'train':
+        print("--- Preparing Training Dataset ---")
+        
+        # 1. Load Lightcurves
+        lc_df = load_lightcurves(dataset_type='train')
+        
+        # 2. Get Features (Handles caching & de-extinction internally)
+        # The dataset_type='train' argument tells it to look for PROCESSED_TRAINING_DATA_PATH
+        features_df = extract_features(lc_df, dataset_type='train')
+        
+        # 3. Merge Labels
+        print("Merging Target Labels...")
+        train_log = pd.read_csv(TRAIN_LOG_PATH)
+        
+        # Inner merge ensures we only train on objects we actually have features for
+        full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
+        
+        X = full_df.drop(columns=['object_id', 'target'])
+        y = full_df['target']
+        
+        return X, y
+    elif dataset_type == 'test':
+        print("--- Preparing Testing Dataset ---")
+        
+        lc_df = load_lightcurves(dataset_type='test')
+        
+        features_df = extract_features(lc_df, dataset_type='test')
+        
+        print("Merging Target Labels...")
+        train_log = pd.read_csv(TEST_LOG_PATH)
+        full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
+        X = full_df.drop(columns=['object_id', 'target'])
+        y = full_df['target']
+        
+        return X, y
+
+    else: 
+        return 

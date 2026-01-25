@@ -8,7 +8,7 @@ import os
 import joblib
 from datetime import datetime
 
-from src.data_loader import get_training_dataset
+from src.data_loader import get_prepared_dataset
 from src.machine_learning.model_factory import train_with_cv 
 from config import MODELS_DIR, MODEL_PATH, SCORE_PATH, MODEL_CONFIG
 
@@ -22,7 +22,7 @@ def run_training(model_name=None):
     print(f"--- Starting Pipeline with Model: {model_name} ---")
 
     # 1. GET DATA
-    X, y = get_training_dataset()
+    X, y = get_prepared_dataset('train')
 
     # 2. RUN TRAINING (Using 5-Fold CV + Class Weights)
     model, score, threshold = train_with_cv(model_name, X, y)
