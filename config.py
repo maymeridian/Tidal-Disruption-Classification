@@ -34,6 +34,8 @@ TEST_LOG_PATH = os.path.join(DATA_DIR, 'test_log.csv')
 TRAIN_DATA_PATH = os.path.join(DATA_DIR, 'train_all_full_lightcurves.csv')
 TEST_DATA_PATH = os.path.join(DATA_DIR, 'test_all_full_lightcurves.csv')
 
+PROCESSED_TRAINING_DATA_PATH = 'datasets/processed_training_data.csv'
+PROCESSED_TESTING_DATA_PATH = 'datasets/processed_testing_data.csv'
 # -----------------------------------------------------------------------------
 # 3. MODEL ARTIFACTS
 # -----------------------------------------------------------------------------
