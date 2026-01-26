@@ -4,5 +4,5 @@ scikit-learn
 extinction
 joblib
 matplotlib
-xgboost
 catboost
+optuna

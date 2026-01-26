@@ -1,54 +1,82 @@
 '''
 src/machine_learning/model_factory.py
 Author: maia.advance, maymeridian
-Description: Factory pattern using Class Weights. Now includes CatBoost.
+Description: Factory pattern. Automatically loads 'best_params.json' if available.
 '''
 
 import numpy as np
-from xgboost import XGBClassifier
-from catboost import CatBoostClassifier  # <--- NEW IMPORT
+import json
+import os
+from catboost import CatBoostClassifier 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
-from config import MODEL_CONFIG
+from config import MODEL_CONFIG, MODELS_DIR
 
 def get_model(model_name, scale_pos_weight=1.0):
     """
     Returns an initialized model.
+    Prioritizes tuned parameters from 'models/best_params.json'.
     """
     seed = MODEL_CONFIG['random_seed']
 
-    if model_name == 'xgboost':
-        return XGBClassifier(
-            n_estimators=200, 
-            max_depth=2, 
-            learning_rate=0.05, 
-            eval_metric='logloss', 
-            scale_pos_weight=scale_pos_weight, 
-            min_child_weight=2, 
-            random_state=seed
-        )
+    if model_name == 'catboost':
+        
+        # 1. DEFAULT PARAMS (Safe Fallback)
+        params = {
+            'iterations': 1000,
+            'depth': 5,
+            'learning_rate': 0.02,
+            'l2_leaf_reg': 10,
+            'rsm': 0.5,
+            'loss_function': 'Logloss',
+            'random_seed': seed,
+            'verbose': 0,
+            'allow_writing_files': False,
+            'scale_pos_weight': scale_pos_weight
+        }
 
-    elif model_name == 'catboost':
-        return CatBoostClassifier(
-            iterations=500,
-            depth=3,  # Shallow depth to prevent overfitting on tiny data
-            learning_rate=0.05,
-            loss_function='Logloss',
-            scale_pos_weight=scale_pos_weight,
-            random_seed=seed,
-            verbose=0,  # Keep it quiet
-            allow_writing_files=False # Stop it from making 'catboost_info' folders
-        )
+        # 2. CHECK FOR OPTIMIZED PARAMS
+        json_path = os.path.join(MODELS_DIR, 'best_params.json')
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r') as f:
+                    tuned_params = json.load(f)
+                
+                # Update defaults with tuned values
+                # Note: We override scale_pos_weight only if it was tuned
+                # But typically for CV training we want the dynamic weight passed in arguments
+                # So we keep the dynamic weight unless you decide otherwise.
+                # For now, let's load everything BUT scale_pos_weight to let train_with_cv control the balance.
+                
+                if 'scale_pos_weight' in tuned_params:
+                    del tuned_params['scale_pos_weight'] 
+                    
+                params.update(tuned_params)
+                # print("  (Using optimized parameters from best_params.json)") 
+            except Exception as e:
+                print(f"Warning: Could not load best_params.json: {e}")
+
+        # Ensure dynamic weight is applied (Factory argument overrides JSON if conflict)
+        params['scale_pos_weight'] = scale_pos_weight
+
+        return CatBoostClassifier(**params)
         
     else:
-        raise ValueError(f"Model '{model_name}' not recognized.")
+        raise ValueError(f"Model '{model_name}' not recognized. Only 'catboost' is supported.")
 
 def train_with_cv(model_name, X, y):
     """
-    Runs 5-Fold Stratified CV using Class Weights (No Oversampling).
+    Runs 5-Fold Stratified CV using Weighted CatBoost.
     """
-    print(f"\n--- Running 5-Fold CV with Class Weights ({model_name}) ---")
+    print(f"\n--- Running 5-Fold CV ({model_name}) ---")
     
+    # Check if we are using tuned params
+    json_path = os.path.join(MODELS_DIR, 'best_params.json')
+    if os.path.exists(json_path):
+        print("✓ Optimization active: Using tuned parameters.")
+    else:
+        print("⚠ Optimization inactive: Using default parameters.")
+
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=MODEL_CONFIG['random_seed'])
     
     cv_scores = []
@@ -59,12 +87,11 @@ def train_with_cv(model_name, X, y):
         X_train_fold, X_val_fold = X.iloc[train_index], X.iloc[val_index]
         y_train_fold, y_val_fold = y.iloc[train_index], y.iloc[val_index]
         
-        # CALCULATE DYNAMIC WEIGHT
+        # CALCULATE WEIGHT 
         n_pos = y_train_fold.sum()
         n_neg = len(y_train_fold) - n_pos
         scale_weight = n_neg / n_pos if n_pos > 0 else 1.0
 
-        # Train on raw data with heavy weights
         model = get_model(model_name, scale_pos_weight=scale_weight)
         model.fit(X_train_fold, y_train_fold)
         
@@ -75,7 +102,7 @@ def train_with_cv(model_name, X, y):
         
         for thresh in np.arange(0.1, 0.95, 0.05):
             preds_fold = (probs_val >= thresh).astype(int)
-            # type: ignore to silence linter about zero_division int vs str
+            # type: ignore to silence linter
             score = f1_score(y_val_fold, preds_fold, zero_division=0) # type: ignore
 
             if score > best_f1_fold:

@@ -65,7 +65,7 @@ FILTER_WAVELENGTHS = {
 # -----------------------------------------------------------------------------
 
 MODEL_CONFIG = {
-    'default_model': 'xgboost',
+    'default_model': 'catboost',
     'random_seed': 67,
     'test_size': 0.2
 }

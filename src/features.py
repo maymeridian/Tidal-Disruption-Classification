@@ -1,7 +1,7 @@
 '''
 src/features.py
 Author: maia.advance, maymeridian
-Description: Fully automated feature extraction. FAST VERSION (Parallelized).
+Description: Feature extraction with LUMINOSITY, PHYSICS, and RATIO features.
 '''
 
 import numpy as np
@@ -12,34 +12,32 @@ import time
 from datetime import timedelta
 from joblib import Parallel, delayed
 
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from extinction import fitzpatrick99
 from config import FILTER_WAVELENGTHS, PROCESSED_TRAINING_DATA_PATH, PROCESSED_TESTING_DATA_PATH, TRAIN_LOG_PATH, TEST_LOG_PATH
 
-# Suppress GP convergence warnings to keep terminal clean
-warnings.filterwarnings("ignore", category=ConvergenceWarning)
+warnings.filterwarnings("ignore")
+
+# --- HELPER FUNCTIONS ---
 
 def get_log_data(dataset_type):
-    if dataset_type == 'train':
+    if dataset_type == 'train': 
         return pd.read_csv(TRAIN_LOG_PATH)
-    elif dataset_type == 'test':
+    elif dataset_type == 'test': 
         return pd.read_csv(TEST_LOG_PATH)
-    else:
+    else: 
         raise ValueError(f"Unknown dataset_type: {dataset_type}")
 
 def apply_deextinction(df, log_df):
-    if 'Flux_Corrected' in df.columns:
+    if 'Flux_Corrected' in df.columns: 
         return df
-
-    print("Applying De-extinction...")
+    
     if 'EBV' not in df.columns:
         if 'EBV' in log_df.columns:
             ebv_map = log_df.set_index('object_id')['EBV']
             df['EBV'] = df['object_id'].map(ebv_map)
         else:
-            print("Warning: EBV column not found. Skipping de-extinction.")
             df['Flux_Corrected'] = df['Flux']
             df['Flux_err_Corrected'] = df['Flux_err']
             return df
@@ -56,21 +54,16 @@ def apply_deextinction(df, log_df):
     return df
 
 def apply_quality_cuts(lc_df):
-    print("Applying Quality Cuts...")
     if 'SNR' not in lc_df.columns:
         safe_err = lc_df['Flux_err'].replace(0, 1e-5)
         lc_df['SNR'] = lc_df['Flux'] / safe_err
 
     valid_mask = (lc_df['Flux'] > 0) 
-    valid_points = lc_df[valid_mask]
-    counts = valid_points.groupby('object_id').size()
-    keep_ids = counts[counts >= 2].index # Keep objects with at least 2 points
-
-    print(f"Retained {len(keep_ids)} objects out of {lc_df['object_id'].nunique()}.")
+    counts = lc_df[valid_mask].groupby('object_id').size()
+    keep_ids = counts[counts >= 2].index
     return lc_df[lc_df['object_id'].isin(keep_ids)].copy()
 
 def fit_2d_gp(obj_df):
-    # Auto-fallback to raw flux if corrected is missing
     if 'Flux_Corrected' in obj_df.columns:
         y = obj_df['Flux_Corrected'].values
         y_err = obj_df['Flux_err_Corrected'].values
@@ -84,53 +77,90 @@ def fit_2d_gp(obj_df):
     y_norm = y / y_scale
     y_err_norm = y_err / y_scale
 
-    # Kernel setup
-    kernel = ConstantKernel(1.0, constant_value_bounds=(1e-5, 1e5)) * Matern(length_scale=[100, 6000], length_scale_bounds=[(1e-2, 1e5), (1e-2, 1e5)], nu=1.5)
-
-    # SPEED OPTIMIZATION: n_restarts_optimizer=0 (was 2)
-    # This makes fitting ~3x faster by avoiding "retry" attempts.
+    kernel = ConstantKernel(1.0) * Matern(length_scale=[100, 6000], nu=1.5)
     gp = GaussianProcessRegressor(kernel=kernel, alpha=y_err_norm**2, n_restarts_optimizer=0, random_state=42)
     gp.fit(X, y_norm)
-
     return gp, y_scale
 
+# --- PHYSICS LOGIC ---
+
+def calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
+    """
+    Calculates normalized physics errors.
+    """
+    # 1. Power Law Fit
+    post_peak_indices = np.where(t_grid > peak_time)[0]
+    tde_power_law_error = 10.0 # Default high penalty
+    
+    if len(post_peak_indices) > 5 and peak_flux > 0:
+        y_real_fade = y_pred_g[post_peak_indices]
+        t_fade = t_grid[post_peak_indices]
+        
+        dt = (t_fade - peak_time) + 10 
+        y_ideal_tde = peak_flux * (dt / dt[0])**(-1.67)
+        
+        # Normalize by Peak Flux
+        # This ensures bright objects aren't punished just for being bright
+        residuals = (y_real_fade - y_ideal_tde) / peak_flux
+        tde_power_law_error = np.mean(residuals**2)
+
+    # 2. Fade Shape Correlation (Monotonic Check)
+    fade_correlation = 0.0
+    if len(post_peak_indices) > 2:
+        fade_correlation = np.corrcoef(t_grid[post_peak_indices], y_pred_g[post_peak_indices])[0, 1]
+
+    # 3. FWHM (Full Width Half Max) - "How fat is the curve?"
+    # TDEs are often sharper than diffusing Supernovae
+    half_max = peak_flux / 2.0
+    
+    # Find rise crossing
+    rise_idx_candidates = np.where((y_pred_g[:peak_idx] <= half_max))[0]
+    if len(rise_idx_candidates) > 0:
+        t_half_rise = t_grid[rise_idx_candidates[-1]]
+    else:
+        t_half_rise = t_grid[0]
+        
+    # Find fade crossing
+    fade_idx_candidates = np.where((y_pred_g[peak_idx:] <= half_max))[0]
+    if len(fade_idx_candidates) > 0:
+        t_half_fade = t_grid[peak_idx + fade_idx_candidates[0]]
+    else:
+        t_half_fade = t_grid[-1]
+        
+    fwhm = t_half_fade - t_half_rise
+
+    return tde_power_law_error, fade_correlation, fwhm
+
+# --- MAIN EXTRACTION ---
+
 def get_gp_features(obj_id, obj_df):
-    # Wrap in try-except to prevent one bad object from crashing the parallel loop
     try:
         gp, y_scale = fit_2d_gp(obj_df)
     except Exception:
         return None
 
+    # GP Parameters
     params = gp.kernel_.get_params()
     try:
-        length_scales = params['k2__length_scale']
-        amplitude = np.sqrt(params['k1__constant_value']) * y_scale
-    except KeyError:
-        try:
-             length_scales = params['k1__length_scale']
-             amplitude = np.sqrt(params['k2__constant_value']) * y_scale
-        except (KeyError, TypeError, ValueError): 
-             length_scales = [0, 0]
-             amplitude = 0
+        ls_time = params.get('k2__length_scale', [0,0])[0]
+        ls_wave = params.get('k2__length_scale', [0,0])[1]
+        amplitude = np.sqrt(params.get('k1__constant_value', 0)) * y_scale
+    except Exception:
+        ls_time, ls_wave, amplitude = 0, 0, 0
 
-    ls_time = length_scales[0] if len(length_scales) > 0 else 0
-    ls_wave = length_scales[1] if len(length_scales) > 1 else 0
-
-    # Grid Prediction
     t_min, t_max = obj_df['Time (MJD)'].min(), obj_df['Time (MJD)'].max()
     t_grid = np.linspace(t_min, t_max, 100)
-    g_wave = FILTER_WAVELENGTHS['g']
     
+    g_wave = FILTER_WAVELENGTHS['g']
     X_pred_g = np.column_stack([t_grid, np.full_like(t_grid, g_wave)])
-    y_pred_g, _ = gp.predict(X_pred_g, return_std=True)
-    y_pred_g *= y_scale
+    y_pred_g = gp.predict(X_pred_g) * y_scale
 
     peak_idx = np.argmax(y_pred_g)
     peak_time = t_grid[peak_idx]
-    peak_flux = y_pred_g[peak_idx] 
+    peak_flux = y_pred_g[peak_idx]
     threshold = peak_flux / 2.512
-    
-    # Rise/Fade Calculation
+
+    # Rise/Fade
     pre_peak = y_pred_g[:peak_idx]
     t_pre = t_grid[:peak_idx]
     if len(pre_peak) > 0 and np.any(pre_peak < threshold):
@@ -147,6 +177,9 @@ def get_gp_features(obj_id, obj_df):
     else:
         fade_time = t_max - peak_time
 
+    # PHYSICS FEATURES
+    tde_error, fade_shape, fwhm = calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
+
     # Colors
     def get_val(t, band):
         val = gp.predict([[t, FILTER_WAVELENGTHS[band]]])[0] * y_scale
@@ -154,44 +187,43 @@ def get_gp_features(obj_id, obj_df):
 
     ug_peak = -2.5 * np.log10(get_val(peak_time, 'u') / get_val(peak_time, 'g'))
     gr_peak = -2.5 * np.log10(get_val(peak_time, 'g') / get_val(peak_time, 'r'))
-    ri_peak = -2.5 * np.log10(get_val(peak_time, 'r') / get_val(peak_time, 'i'))
     
-    t_pre_mid = peak_time - (rise_time / 2)
-    t_post_mid = peak_time + (fade_time / 2)
-
-    gr_pre = -2.5 * np.log10(get_val(t_pre_mid, 'g') / get_val(t_pre_mid, 'r'))
-    gr_post = -2.5 * np.log10(get_val(t_post_mid, 'g') / get_val(t_post_mid, 'r'))
-    ri_pre = -2.5 * np.log10(get_val(t_pre_mid, 'r') / get_val(t_pre_mid, 'i'))
-    ri_post = -2.5 * np.log10(get_val(t_post_mid, 'r') / get_val(t_post_mid, 'i'))
+    # Cooling Rate
+    t_fade = peak_time + (fade_time/2)
+    gr_fade = -2.5 * np.log10(get_val(t_fade, 'g') / get_val(t_fade, 'r'))
+    color_cooling_rate = gr_fade - gr_peak 
+    
+    # RATIO FEATURES (NEW)
+    rise_fade_ratio = rise_time / fade_time if fade_time > 0 else 0
+    
+    area_under_curve = np.trapz(y_pred_g, t_grid)
+    compactness = area_under_curve / peak_flux if peak_flux > 0 else 0
 
     return {
         'object_id': obj_id,
-        'amplitude': amplitude,
-        'length_scale_time': ls_time,
-        'length_scale_wave': ls_wave,
+        'amplitude': amplitude, # This is FLUX amplitude
+        'ls_time': ls_time,
+        'ls_wave': ls_wave,
         'rise_time': rise_time,
         'fade_time': fade_time,
+        'fwhm': fwhm, 
+        'rise_fade_ratio': rise_fade_ratio, 
+        'compactness': compactness,
+        'tde_power_law_error': tde_error, 
+        'fade_shape_correlation': fade_shape,
+        'color_cooling_rate': color_cooling_rate,
         'ug_peak': ug_peak,
-        'mean_gr_pre': gr_pre,
-        'mean_gr_post': gr_post,
-        'mean_ri_pre': ri_pre,
-        'mean_ri_post': ri_post,
-        'slope_gr_pre': (gr_peak - gr_pre) / (rise_time/2) if rise_time > 0 else 0,
-        'slope_gr_post': (gr_post - gr_peak) / (fade_time/2) if fade_time > 0 else 0,
-        'slope_ri_pre': (ri_peak - ri_pre) / (rise_time/2) if rise_time > 0 else 0,
-        'slope_ri_post': (ri_post - ri_peak) / (fade_time/2) if fade_time > 0 else 0
+        'gr_peak': gr_peak
     }
 
 def extract_features(lc_df, dataset_type='train'):
     total_start_time = time.time()
     
-    # 1. CACHE CHECK
+    # 1. CACHE CHECK (Uncommented for normal use)
     cache_file = PROCESSED_TRAINING_DATA_PATH if dataset_type == 'train' else PROCESSED_TESTING_DATA_PATH
     if cache_file and os.path.exists(cache_file):
         print(f"Loading cached features from {cache_file}...")
-        features_df = pd.read_csv(cache_file)
-        print(f"Loaded {len(features_df)} entries.")
-        return features_df
+        return pd.read_csv(cache_file)
 
     # 2. PREP
     print(f"Extracting Features for {dataset_type}...")
@@ -200,46 +232,51 @@ def extract_features(lc_df, dataset_type='train'):
     lc_clean = apply_quality_cuts(lc_df)
     
     unique_ids = lc_clean['object_id'].unique()
-    total_objects = len(unique_ids)
     
-    # 3. PARALLEL EXECUTION (The Speedup!)
-    print(f"Fitting 2D GPs on {total_objects} objects using ALL available cores...")
-    
-    # Prepare data for parallel execution (Group by object_id)
-    # This prevents searching the massive DataFrame inside every loop iteration
+    # 3. PARALLEL EXECUTION
+    print(f"Fitting 2D GPs on {len(unique_ids)} objects using ALL cores...")
     grouped_data = [group for _, group in lc_clean.groupby('object_id')]
     
-    # n_jobs=-1 uses all available CPU cores
-    features_list = Parallel(n_jobs=-1, verbose=5)(
+    features_list = Parallel(n_jobs=-1, verbose=0)(
         delayed(get_gp_features)(lc_clean.iloc[group.index[0]]['object_id'], group) 
         for group in grouped_data
     )
     
-    # Filter out Nones (failed fits)
     features_list = [f for f in features_list if f is not None]
+    features_df = pd.DataFrame(features_list).fillna(0)
 
-    features_df = pd.DataFrame(features_list)
-    features_df = features_df.fillna(0)
-
-    # 4. MERGE METADATA
+    # 4. MERGE REDSHIFT & CALCULATE ABSOLUTE MAGNITUDE
     if 'Z' in log_df.columns:
-        print("Merging Redshift...")
-        cols_to_merge = ['object_id', 'Z']
-        if 'Z_err' in log_df.columns:
-            cols_to_merge.append('Z_err')
-            
-        meta = log_df[cols_to_merge].copy()
-        rename_map = {'Z': 'redshift', 'Z_err': 'redshift_err'}
-        meta = meta.rename(columns=rename_map)
+        print("Merging Redshift & Calculating Luminosity...")
+        
+        # Prepare Metadata
+        meta = log_df[['object_id', 'Z', 'Z_err']].copy() if 'Z_err' in log_df.columns else log_df[['object_id', 'Z']].copy()
+        meta = meta.rename(columns={'Z': 'redshift', 'Z_err': 'redshift_err'})
+        
+        # Merge
         features_df = features_df.merge(meta, on='object_id', how='left')
-    
+        
+        # --- THE LUMINOSITY CALCULATION ---
+        # M = m - 5*log10(D_L) + C
+        # Since Flux ~ 10^(-0.4 * m), we can derive: M ~ -2.5*log10(Flux) - 5*log10(z)
+        # This gives us a proxy for Intrinsic Brightness (Luminosity)
+        
+        # Clean redshift (avoid log(0) or log(neg))
+        safe_z = features_df['redshift'].clip(lower=0.001)
+        safe_flux = features_df['amplitude'].clip(lower=0.001)
+        
+        # Calculate Proxy Absolute Magnitude
+        # (Negative values mean brighter in astronomy, but raw values work for ML)
+        features_df['absolute_magnitude_proxy'] = -2.5 * np.log10(safe_flux) - 5 * np.log10(safe_z)
+        
+        # Log-Transform the Power Law Error (Squash the dynamic range)
+        features_df['log_tde_error'] = np.log10(features_df['tde_power_law_error'] + 1e-9)
+
     # 5. SAVE
     if cache_file:
         print(f"Saving features to cache: {cache_file}...")
         os.makedirs(os.path.dirname(cache_file), exist_ok=True)
         features_df.to_csv(cache_file, index=False)
 
-    total_time = time.time() - total_start_time
-    print(f"Feature Extraction Completed in {str(timedelta(seconds=int(total_time)))}")
-
+    print(f"Completed in {str(timedelta(seconds=int(time.time() - total_start_time)))}")
     return features_df

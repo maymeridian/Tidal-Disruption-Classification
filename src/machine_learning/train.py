@@ -1,7 +1,7 @@
 '''
 src/machine_learning/train.py
 Author: maia.advance, maymeridian
-Description: Training pipeline. Clean, focused, and integrated with data_loader.
+Description: Training pipeline. Cleaned to focus on the robust 0.64 strategy.
 '''
 
 import os
@@ -22,17 +22,17 @@ def run_training(model_name=None):
     print(f"--- Starting Pipeline with Model: {model_name} ---")
 
     # 1. GET DATA
-    X, y = get_prepared_dataset('train')
+    X_train, y_train = get_prepared_dataset('train')
 
-    # 2. RUN TRAINING (Using 5-Fold CV + Class Weights)
-    model, score, threshold = train_with_cv(model_name, X, y)
+    # 2. RUN TRAINING (Using 5-Fold CV + Class Weights + Auto-Tuning)
+    model, score, threshold = train_with_cv(model_name, X_train, y_train)
 
     # 3. Feature Importance (Diagnostic)
     print("\n--- Feature Importance (Top 10) ---")
     if hasattr(model, 'feature_importances_'):
         importance = model.feature_importances_
-        if len(importance) == len(X.columns):
-            for name, imp in sorted(zip(X.columns, importance), key=lambda x: x[1], reverse=True)[:10]:
+        if len(importance) == len(X_train.columns):
+            for name, imp in sorted(zip(X_train.columns, importance), key=lambda x: x[1], reverse=True)[:10]:
                 print(f"{name}: {imp:.4f}")
 
     # 4. Save Artifacts
@@ -43,7 +43,7 @@ def run_training(model_name=None):
     print(f"\nProduction model saved to {MODEL_PATH}")
 
     # Save Threshold (Critical for predict.py)
-    thresh_path = os.path.join(os.path.dirname(SCORE_PATH), 'threshold.txt')
+    thresh_path = os.path.join(MODELS_DIR, 'threshold.txt')
     with open(thresh_path, 'w') as f:
         f.write(str(threshold))
     print(f"Optimized threshold ({threshold:.2f}) saved to {thresh_path}")

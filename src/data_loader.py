@@ -109,16 +109,13 @@ def get_prepared_dataset(dataset_type='train'):
         print("--- Preparing Testing Dataset ---")
         
         lc_df = load_lightcurves(dataset_type='test')
-        
         features_df = extract_features(lc_df, dataset_type='test')
         
-        print("Merging Target Labels...")
-        train_log = pd.read_csv(TEST_LOG_PATH)
-        full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
-        X = full_df.drop(columns=['object_id', 'target'])
-        y = full_df['target']
+        # Split Features (X) and IDs to identify predictions later
+        X = features_df.drop(columns=['object_id'])
+        ids = features_df['object_id']
         
-        return X, y
+        return X, ids
 
     else: 
         return 
