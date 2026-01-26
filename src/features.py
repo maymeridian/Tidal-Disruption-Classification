@@ -1,7 +1,7 @@
 '''
 src/features.py
 Author: maia.advance, maymeridian
-Description: Feature extraction with LUMINOSITY, PHYSICS, and RATIO features.
+Description: Feature extraction. Added Rise Physics and Chi-Square "Wiggle" detection.
 '''
 
 import numpy as np
@@ -85,51 +85,53 @@ def fit_2d_gp(obj_df):
 # --- PHYSICS LOGIC ---
 
 def calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
-    """
-    Calculates normalized physics errors.
-    """
-    # 1. Power Law Fit
+    # 1. FADE PHYSICS (t^-5/3)
     post_peak_indices = np.where(t_grid > peak_time)[0]
-    tde_power_law_error = 10.0 # Default high penalty
+    tde_power_law_error = 10.0 
     
     if len(post_peak_indices) > 5 and peak_flux > 0:
         y_real_fade = y_pred_g[post_peak_indices]
         t_fade = t_grid[post_peak_indices]
-        
         dt = (t_fade - peak_time) + 10 
         y_ideal_tde = peak_flux * (dt / dt[0])**(-1.67)
-        
-        # Normalize by Peak Flux
-        # This ensures bright objects aren't punished just for being bright
         residuals = (y_real_fade - y_ideal_tde) / peak_flux
         tde_power_law_error = np.mean(residuals**2)
 
-    # 2. Fade Shape Correlation (Monotonic Check)
+    # 2. RISE PHYSICS (t^2 Fireball) - NEW
+    # We check if the rise follows a parabola
+    pre_peak_indices = np.where(t_grid < peak_time)[0]
+    rise_fireball_error = 10.0
+    
+    if len(pre_peak_indices) > 5 and peak_flux > 0:
+        y_real_rise = y_pred_g[pre_peak_indices]
+        t_rise = t_grid[pre_peak_indices]
+        
+        # Fit a simple parabola to the rise points
+        if len(t_rise) > 3:
+            try:
+                # Fit y = a*x^2 + b*x + c
+                coeffs = np.polyfit(t_rise, y_real_rise, 2)
+                p = np.poly1d(coeffs)
+                residuals_rise = (y_real_rise - p(t_rise)) / peak_flux
+                rise_fireball_error = np.mean(residuals_rise**2)
+            except Exception:
+                pass
+
+    # 3. Shape Stats
     fade_correlation = 0.0
     if len(post_peak_indices) > 2:
         fade_correlation = np.corrcoef(t_grid[post_peak_indices], y_pred_g[post_peak_indices])[0, 1]
 
-    # 3. FWHM (Full Width Half Max) - "How fat is the curve?"
-    # TDEs are often sharper than diffusing Supernovae
     half_max = peak_flux / 2.0
-    
-    # Find rise crossing
     rise_idx_candidates = np.where((y_pred_g[:peak_idx] <= half_max))[0]
-    if len(rise_idx_candidates) > 0:
-        t_half_rise = t_grid[rise_idx_candidates[-1]]
-    else:
-        t_half_rise = t_grid[0]
+    t_half_rise = t_grid[rise_idx_candidates[-1]] if len(rise_idx_candidates) > 0 else t_grid[0]
         
-    # Find fade crossing
     fade_idx_candidates = np.where((y_pred_g[peak_idx:] <= half_max))[0]
-    if len(fade_idx_candidates) > 0:
-        t_half_fade = t_grid[peak_idx + fade_idx_candidates[0]]
-    else:
-        t_half_fade = t_grid[-1]
+    t_half_fade = t_grid[peak_idx + fade_idx_candidates[0]] if len(fade_idx_candidates) > 0 else t_grid[-1]
         
     fwhm = t_half_fade - t_half_rise
-
-    return tde_power_law_error, fade_correlation, fwhm
+    
+    return tde_power_law_error, rise_fireball_error, fade_correlation, fwhm
 
 # --- MAIN EXTRACTION ---
 
@@ -139,7 +141,6 @@ def get_gp_features(obj_id, obj_df):
     except Exception:
         return None
 
-    # GP Parameters
     params = gp.kernel_.get_params()
     try:
         ls_time = params.get('k2__length_scale', [0,0])[0]
@@ -148,9 +149,30 @@ def get_gp_features(obj_id, obj_df):
     except Exception:
         ls_time, ls_wave, amplitude = 0, 0, 0
 
+    # --- NEW: CALCULATE GOODNESS OF FIT (CHI-SQUARED) ---
+    # This detects "Wiggle" (AGN) vs "Smooth" (TDE)
+    # We predict the GP at the EXACT observed points to compare
+    X_obs = np.column_stack([obj_df['Time (MJD)'].values, obj_df['Filter'].map(FILTER_WAVELENGTHS).values])
+    y_gp_pred = gp.predict(X_obs) * y_scale
+    
+    if 'Flux_Corrected' in obj_df.columns:
+        y_obs = obj_df['Flux_Corrected'].values
+        y_err = obj_df['Flux_err_Corrected'].values
+    else:
+        y_obs = obj_df['Flux'].values
+        y_err = obj_df['Flux_err'].values
+        
+    # Reduced Chi-Squared: sum((Obs - Pred)^2 / Err^2) / N
+    safe_err = np.where(y_err <= 0, 1e-5, y_err)
+    chi_sq_terms = ((y_obs - y_gp_pred) / safe_err) ** 2
+    reduced_chi_square = np.mean(chi_sq_terms)
+    
+    # Cap it to avoid infinities breaking the model
+    reduced_chi_square = min(reduced_chi_square, 1000.0)
+
+    # --- GP PREDICTION ON GRID ---
     t_min, t_max = obj_df['Time (MJD)'].min(), obj_df['Time (MJD)'].max()
     t_grid = np.linspace(t_min, t_max, 100)
-    
     g_wave = FILTER_WAVELENGTHS['g']
     X_pred_g = np.column_stack([t_grid, np.full_like(t_grid, g_wave)])
     y_pred_g = gp.predict(X_pred_g) * y_scale
@@ -160,9 +182,9 @@ def get_gp_features(obj_id, obj_df):
     peak_flux = y_pred_g[peak_idx]
     threshold = peak_flux / 2.512
 
-    # Rise/Fade
     pre_peak = y_pred_g[:peak_idx]
     t_pre = t_grid[:peak_idx]
+
     if len(pre_peak) > 0 and np.any(pre_peak < threshold):
         drop_idx = np.where(pre_peak < threshold)[0][-1]
         rise_time = peak_time - t_pre[drop_idx]
@@ -171,6 +193,7 @@ def get_gp_features(obj_id, obj_df):
 
     post_peak = y_pred_g[peak_idx:]
     t_post = t_grid[peak_idx:]
+
     if len(post_peak) > 0 and np.any(post_peak < threshold):
         drop_idx = np.where(post_peak < threshold)[0][0]
         fade_time = t_post[drop_idx] - peak_time
@@ -178,54 +201,67 @@ def get_gp_features(obj_id, obj_df):
         fade_time = t_max - peak_time
 
     # PHYSICS FEATURES
-    tde_error, fade_shape, fwhm = calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
+    tde_error, rise_error, fade_shape, fwhm = calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
 
-    # Colors
     def get_val(t, band):
         val = gp.predict([[t, FILTER_WAVELENGTHS[band]]])[0] * y_scale
         return val if val > 0 else 1e-5
 
     ug_peak = -2.5 * np.log10(get_val(peak_time, 'u') / get_val(peak_time, 'g'))
     gr_peak = -2.5 * np.log10(get_val(peak_time, 'g') / get_val(peak_time, 'r'))
-    
-    # Cooling Rate
+    ur_peak = -2.5 * np.log10(get_val(peak_time, 'u') / get_val(peak_time, 'r'))
+
     t_fade = peak_time + (fade_time/2)
     gr_fade = -2.5 * np.log10(get_val(t_fade, 'g') / get_val(t_fade, 'r'))
     color_cooling_rate = gr_fade - gr_peak 
     
-    # RATIO FEATURES (NEW)
     rise_fade_ratio = rise_time / fade_time if fade_time > 0 else 0
-    
     area_under_curve = np.trapz(y_pred_g, t_grid)
     compactness = area_under_curve / peak_flux if peak_flux > 0 else 0
+    rise_slope = amplitude / rise_time if rise_time > 1 else amplitude
+    
+    baseline_window = int(len(y_pred_g) * 0.15)
+    baseline_flux = np.median(y_pred_g[:baseline_window])
+    baseline_ratio = baseline_flux / peak_flux if peak_flux > 0 else 0
 
     return {
-        'object_id': obj_id,
-        'amplitude': amplitude, # This is FLUX amplitude
-        'ls_time': ls_time,
-        'ls_wave': ls_wave,
-        'rise_time': rise_time,
-        'fade_time': fade_time,
-        'fwhm': fwhm, 
-        'rise_fade_ratio': rise_fade_ratio, 
-        'compactness': compactness,
-        'tde_power_law_error': tde_error, 
-        'fade_shape_correlation': fade_shape,
-        'color_cooling_rate': color_cooling_rate,
-        'ug_peak': ug_peak,
-        'gr_peak': gr_peak
+        'object_id': obj_id,             # Unique ID of the astronomical object
+        
+        # --- GAUSSIAN PROCESS PARAMETERS ---
+        'amplitude': amplitude,          # peak flux (How bright is the explosion?)
+        'ls_time': ls_time,              # Length Scale (Time): How slowly does the light curve change? (TDEs are slower than some flares)
+        'ls_wave': ls_wave,              # Length Scale (Wavelength): How similar are different colors? (TDEs are usually blue in all bands)
+        
+        # --- SHAPE STATISTICS ---
+        'rise_time': rise_time,          # Days from first detection to peak brightness
+        'fade_time': fade_time,          # Days from peak brightness to disappearance
+        'fwhm': fwhm,                    # Full Width Half Max: The "width" of the peak (TDEs are often sharper than supernovae)
+        'rise_fade_ratio': rise_fade_ratio, # Rise Time / Fade Time (TDEs rise fast and fade slow, so this is usually < 1)
+        'compactness': compactness,      # Area under the curve / Peak Flux (Measures "energy density" or total duration)
+        'rise_slope': rise_slope,        # Peak Flux / Rise Time (How violent was the explosion? TDEs are very steep)
+
+        # --- PHYSICS CHECKS (The "TDE Detectors") ---
+        'tde_power_law_error': tde_error, # Does the fade follow the t^-5/3 gravity law? (Lower is better/more likely TDE)
+        'rise_fireball_error': rise_error, # Does the rise follow the t^2 fireball law? (Lower is better/more likely TDE)
+        'reduced_chi_square': reduced_chi_square, # Smoothness check: Low = Smooth (TDE), High = Jittery (AGN/Noise)
+        'fade_shape_correlation': fade_shape, # Does the fade strictly go down? (1.0 = perfect monotonic fade, <0 = weird bumps)
+        'baseline_ratio': baseline_ratio, # Pre-explosion brightness / Peak brightness. (TDEs ≈ 0, AGNs > 0)
+
+        # --- COLOR & TEMPERATURE ---
+        'color_cooling_rate': color_cooling_rate, # Change in (g-r) color over time. (TDEs cool down/get redder as they expand)
+        'ug_peak': ug_peak,              # (u - g) color at peak: Measures UV/Blue intensity (TDEs are very negative/blue)
+        'gr_peak': gr_peak,              # (g - r) color at peak: Measures Green/Red intensity
+        'ur_peak': ur_peak               # (u - r) color at peak: Max temperature difference (Best for spotting hot TDEs)
     }
 
 def extract_features(lc_df, dataset_type='train'):
     total_start_time = time.time()
     
-    # 1. CACHE CHECK (Uncommented for normal use)
     cache_file = PROCESSED_TRAINING_DATA_PATH if dataset_type == 'train' else PROCESSED_TESTING_DATA_PATH
     if cache_file and os.path.exists(cache_file):
         print(f"Loading cached features from {cache_file}...")
         return pd.read_csv(cache_file)
 
-    # 2. PREP
     print(f"Extracting Features for {dataset_type}...")
     log_df = get_log_data(dataset_type)
     lc_df = apply_deextinction(lc_df, log_df)
@@ -233,7 +269,6 @@ def extract_features(lc_df, dataset_type='train'):
     
     unique_ids = lc_clean['object_id'].unique()
     
-    # 3. PARALLEL EXECUTION
     print(f"Fitting 2D GPs on {len(unique_ids)} objects using ALL cores...")
     grouped_data = [group for _, group in lc_clean.groupby('object_id')]
     
@@ -245,34 +280,19 @@ def extract_features(lc_df, dataset_type='train'):
     features_list = [f for f in features_list if f is not None]
     features_df = pd.DataFrame(features_list).fillna(0)
 
-    # 4. MERGE REDSHIFT & CALCULATE ABSOLUTE MAGNITUDE
     if 'Z' in log_df.columns:
         print("Merging Redshift & Calculating Luminosity...")
-        
-        # Prepare Metadata
         meta = log_df[['object_id', 'Z', 'Z_err']].copy() if 'Z_err' in log_df.columns else log_df[['object_id', 'Z']].copy()
         meta = meta.rename(columns={'Z': 'redshift', 'Z_err': 'redshift_err'})
         
-        # Merge
         features_df = features_df.merge(meta, on='object_id', how='left')
         
-        # --- THE LUMINOSITY CALCULATION ---
-        # M = m - 5*log10(D_L) + C
-        # Since Flux ~ 10^(-0.4 * m), we can derive: M ~ -2.5*log10(Flux) - 5*log10(z)
-        # This gives us a proxy for Intrinsic Brightness (Luminosity)
-        
-        # Clean redshift (avoid log(0) or log(neg))
         safe_z = features_df['redshift'].clip(lower=0.001)
         safe_flux = features_df['amplitude'].clip(lower=0.001)
         
-        # Calculate Proxy Absolute Magnitude
-        # (Negative values mean brighter in astronomy, but raw values work for ML)
         features_df['absolute_magnitude_proxy'] = -2.5 * np.log10(safe_flux) - 5 * np.log10(safe_z)
-        
-        # Log-Transform the Power Law Error (Squash the dynamic range)
         features_df['log_tde_error'] = np.log10(features_df['tde_power_law_error'] + 1e-9)
 
-    # 5. SAVE
     if cache_file:
         print(f"Saving features to cache: {cache_file}...")
         os.makedirs(os.path.dirname(cache_file), exist_ok=True)
