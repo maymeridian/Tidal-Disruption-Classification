@@ -26,6 +26,7 @@ print(f"Using device: {device}")
 # inspiration: https://arxiv.org/pdf/1905.02473
 
 # 1. Sigmoid
+# f(x) = 1 / (1 + e^-x)
 
 # 2. Gaussian
 class GaussianActivation(nn.Module):
@@ -38,20 +39,67 @@ class GaussianActivation(nn.Module):
         return torch.exp(-((x - self.mu) / self.sigma) ** 2)
 
 # 3. ReLU
+class ReLU(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return torch.maximum(torch.zeros_like(x), x)
+        # or F.relu(x) or x.clamp(min=0)
 
 # 4. Leaky ReLU
+# f(x) = x if x > 0, else alpha * x
+# Allows small negative gradient to prevent "dying ReLU"
 
-# 5. ELU - Exponential Linear Uni
+class LeakyReLU(nn.Module):
+    def __init__(self, alpha=0.01):
+        super().__init__()
+        self.alpha = alpha
 
+    def forward(self, x):
+        return torch.where(x > 0, x, self.alpha * x)
+        # or F.leaky_relu(x, negative_slope.alpha)
+
+# 5. ELU - Exponential Linear Unit
+class ELU(nn.Module):
+    def __init__(self, alpha=1.0):
+        super().__init__()
+        self.alpha = alpha
+    
+    def forward(self, x):
+        return torch.where(x > 0, x, self.alpha * (torch.exp(x) - 1))
+        
 # 6. SELU - Scaled Exponential Linear Unit
+# (Klambauer et al., 2017)
+#  SELU(x) = scale * (x if x > 0 else alpha * (exp(x) - 1))
+class SELU(nn.Module):
+    def __init__(self): 
+        super().__init__()
+        self.alpha = 1.6732632423543772848170429916717
+        self.scale = 1.0507009873554804934193349852946
+
+    def forward(self, x): 
+        return self.scale * torch.where(
+            x > 0,
+            x, 
+            self.alpha * (torch.exp(x) - 1)
+        )
 
 # 7. PReLU - Parametric ReLU 
+# Like Leaky ReLU but alpha is learned during training
+class PreLU(nn.Module):
+    def __init__(self, num_parameters=1, init=0.25): 
+        super().__init__()
+        self.alpha = nn.Parameter(torch.ones(num_parameters) * init)
 
-# S-Shaped ReLU
+    def forward(self, x):
+        return torch.where(x > 0, x, self.alpha * x)
 
-# APLU - Adaptive Piecewise Linear Unit
 
-# 'Mexican ReLU' 
+
+# 8. APLU - Adaptive Piecewise Linear Unit
+
+# 9. 'Mexican ReLU' 
 # https://www.researchgate.net/figure/Mexican-hat-type-activation-functions-3_fig1_268386570
 class MexicanHatMultiScale(nn.Module):
     def __init__(self, num_scales=3):
@@ -59,7 +107,7 @@ class MexicanHatMultiScale(nn.Module):
 
 
 # https://arxiv.org/vc/arxiv/papers/1908/1908.08681v1.pdf
-# 3. Mish: Self Regularized Non-Monotonic Neural Activation Function
+# 10. Mish: Self Regularized Non-Monotonic Neural Activation Function
 # -------------------------
 # f(x) = x * tanh(sigma(x))
 # where sigma(x) = ln(1 + e^x) is the softplus activation function 
@@ -71,7 +119,7 @@ class Mish(nn.Module):
 
 
 # https://arxiv.org/pdf/1710.05941v1
-# 4. Swish - Smooth Non-Monotonic Activation Function
+# 11. Swish - Smooth Non-Monotonic Activation Function
 # a "self-gated" activation function
 # -------------------------
 # f(x) = x * sigma(x)
@@ -84,7 +132,7 @@ class Swish(nn.Module):
 
 
 # https://arxiv.org/pdf/1606.08415
-# 5. GELU: Gaussian Error Linear Units
+# 12. GELU: Gaussian Error Linear Units
 # -------------------------
 # G(x) = xP(X <= x) = xPhi(x) = x * (1/2) [ 1 + erf( x/sqrt(2) ) ]
 # approximated by : 
@@ -95,9 +143,35 @@ class GELU(nn.Module):
         return F.gelu(x)
 
 
+# https://arxiv.org/abs/1907.06732
+# 13. PADÉ Activation Units
+
+class PADE(nn.Module):
+    def __init__(self, m=2, n=2): 
+        super().__init__()
+        self.m = m
+        self.n = n
+
+        self.numerator_coeffs = nn.Parameter(torch.randn(m+1))
+        self.denominator_coeffs = nn.Parameter(torch.randn(n))
+
+    def forward(self, x):
+        # compute numerator : a0 + a1*x + a2*x^2 + ...
+        numerator = torch.zeros_like(x)
+
+        for i, coeff in enumerate(self.numerator_coeffs):
+            numerator += coeff * (x**i)
+        
+        # compute denominator : 1 + b1*x + b2*x^2 + ...
+        denominator = torch.ones_like(x)
+        for i, coeff in enumerate(self.denominator+coeffs):
+            denominator += coeff * (x ** (i+1))
+
+        # added epsilon to prevent division by zero.
+        return numerator / (denominator + 1e-8)
 
 
-# used for periodics, this is just a funny addition 
+# used for finding periodics, this is just a funny addition because of the name i guess.
 class Snake(nn.Module):
     def __init__(self, in_features, alpha=1.0):
         super().__init__()
@@ -108,15 +182,49 @@ class Snake(nn.Module):
 
 
 
+
+
+
+
+
 # -------------------------------
-# Loss Functions
+# Loss Functions : 
+
+# Logit Adjustment Loss
+# WeightedBCELoss
+# Cross Entropy
+# FocalLoss
+# Soft F1 Loss
+# AsymetricLoss
+# PolyLoss
+# LDAMLoss
+# TverskyLoss with high beta
+# FocalTverskyLoss
+# Cross Balanced Focal Loss
+# Matthews Correlation Coefficient
 
 
+# Neural Networks: 
+# TabNet
+# FT-Transformer
+# CNN
+# Tabular Residual Net 
+# DCN V2 (Deep & Cross Network)
+# SAINT SAINT (Self-Attention and Intersample Attention)
+# NODE (Neural Oblivious Decision Ensembles)
 
-# -------------------------------
 
+# Notes: 
+# ensemble with Catboost : 
+# Convert predictions to Ranks (0 to 1).
+# Average the ranks.
+# Find the optimal Threshold on the averaged ranks to maximize F1.
 
-# the plan is to try a variety of activation and loss functions, 
+# will use WeightedRandomSampler because without it there is a high probability of 
+# sampling no TDEs from the dataset, which was why the F1 would go up and back down dramatically.
+# learning rate cannot accomodate for this otherwise. 
+
+# try a variety of activation and loss functions, 
 # and tabnet, ft-transformer, cnn's, and whatever else I can think of to try.
 # each of these networks will be tested in as many ways as possible with the given strategy above. 
 
@@ -125,4 +233,36 @@ class Snake(nn.Module):
 # procedurally attempted.
 
 
+def progress_bar(epoch, batch, total_batches, loss):
+    progress = batch / total_batches * 100
+    print(f"\rEpoch {epoch} [{batch}/{total_batches}] {progress:.1f}% Loss: {loss:.4f}", 
+          end='', flush=True)
+    
+    if batch == total_batches:
+        print()  # Newline at epoch end
 
+# -------------------------------
+
+
+
+
+
+# essentially, search all possible world lines for the correct model :P
+# this is mad science
+def search_all_world_lines():
+    print("""⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    ⣿⣿⣿⣿⣿⣿⡿⠟⠋⠉⠉⠉⠙⠛⢿⣿⣿⣿⣿⣿
+    ⣿⣿⡟⢩⣶⠂⠄⠄⣠⣶⣿⣯⣉⣷⣦⠈⣻⣿⣿⣿
+    ⣿⣿⣿⣄⠁⠄⠄⢸⡿⠟⠛⠉⠉⠉⠛⢧⠘⣿⣿⣿
+    ⣿⣿⣿⡿⠄⠄⠄⠄⢀⠄⣠⡄⠄⠄⠄⠄⠄⢹⣿⣿
+    ⣿⣿⣿⡇⠄⠄⠄⣸⡘⢴⣻⣧⣤⢀⣂⡀⠄⢸⣿⣿
+    ⣿⣿⣿⡇⠄⠘⢢⣿⣷⣼⣿⣿⣿⣮⣴⢃⣤⣿⣿⣿
+    ⣿⣿⡿⠄⣠⣄⣀⣙⣿⣿⣿⣿⣿⡿⠋⢸⡇⢹⣿⣿
+    ⣿⣿⡇⠰⣻⣿⣿⣿⠿⠮⠙⠿⠓⠛⠄⠄⠈⠄⢻⣿
+    ⣿⡟⠄⠄⠈⠙⠋⠄⠄⠄⠄⠁⠄⠄⠄⠄⠄⠄⢾⣿
+    ⡏⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢀⠄⠄⠄⠄⠄⠄⠈⣿
+    ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+    """
+    )
+
+search_all_world_lines()
