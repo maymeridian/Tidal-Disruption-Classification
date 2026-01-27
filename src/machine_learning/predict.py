@@ -2,6 +2,7 @@
 src/machine_learning/predict.py
 Author: maia.advance, maymeridian
 Description: Generates predictions using the saved model and optimized threshold.
+             Updated to use centralized data loading via get_prepared_dataset.
 '''
 
 import pandas as pd
@@ -9,8 +10,7 @@ import os
 import joblib
 from datetime import datetime
 
-from src.data_loader import load_lightcurves
-from src.features import extract_features 
+from src.data_loader import get_prepared_dataset 
 from config import MODEL_PATH, SCORE_PATH, RESULTS_DIR, TEST_LOG_PATH
 
 def run_prediction():
@@ -19,14 +19,11 @@ def run_prediction():
     Applies the optimized threshold found during training.
     """
     
-    # 1. Load Test Lightcurves
+    # 1. Load Test Features & IDs
     print("Loading Test Lightcurves...")
-    lc_df = load_lightcurves(dataset_type='test')
+    X_test, ids = get_prepared_dataset('test')
 
-    # 2. Extract Features 
-    features_df = extract_features(lc_df, dataset_type='test')
-
-    # 3. Load Model 
+    # 2. Load Model 
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model not found at {MODEL_PATH}. Run training first!")
         return
@@ -34,7 +31,7 @@ def run_prediction():
     print(f"Loading model from {MODEL_PATH}...")
     model = joblib.load(MODEL_PATH)
 
-    # 4. Load Optimized Threshold
+    # 3. Load Optimized Threshold
     thresh_path = os.path.join(os.path.dirname(SCORE_PATH), 'threshold.txt')
     threshold = 0.5 # Default fallback
     if os.path.exists(thresh_path):
@@ -47,23 +44,23 @@ def run_prediction():
     else:
         print("Warning: Threshold file not found. Using default (0.5).")
 
-    # 5. Predict
-    # Drop object_id so the input shape matches the training data
-    X_test = features_df.drop(columns=['object_id'])
-    
+    # 4. Predict
+    if hasattr(model, "feature_names_"):
+        missing_cols = set(model.feature_names_) - set(X_test.columns)
+        for c in missing_cols:
+            X_test[c] = 0
+        X_test = X_test[model.feature_names_] # Reorder to match model
+
     print("Generating predictions...")
     y_probs = model.predict_proba(X_test)[:, 1]
     
     # Apply threshold
     y_preds = (y_probs >= threshold).astype(int)
 
-    # 6. Create Partial Submission DataFrame
-    # This only contains objects that survived the quality cuts in extract_features
-    submission_partial = pd.DataFrame({'object_id': features_df['object_id'], 'prediction': y_preds,'probability': y_probs})
+    # 5. Create Partial Submission DataFrame
+    submission_partial = pd.DataFrame({'object_id': ids, 'prediction': y_preds, 'probability': y_probs})
 
-    # 7. Merge with Full Test Log
-    # We load the test log purely to get the complete list of object_ids.
-    # This ensures objects dropped by quality cuts are re-added with prediction 0.
+    # 6. Merge with Full Test Log
     print("Finalizing submission file...")
     test_log = pd.read_csv(TEST_LOG_PATH)
 
@@ -74,7 +71,7 @@ def run_prediction():
     final_submission['prediction'] = final_submission['prediction'].fillna(0).astype(int)
     final_submission['probability'] = final_submission['probability'].fillna(0.0)
 
-    # 8. Construct Output Filename
+    # 7. Construct Output Filename
     f1_score_str = "0.000"
     if os.path.exists(SCORE_PATH):
         with open(SCORE_PATH, 'r') as f:
