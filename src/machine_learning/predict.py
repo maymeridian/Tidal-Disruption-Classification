@@ -43,9 +43,9 @@ def run_prediction():
                 threshold = float(f.read().strip())
                 print(f"Loaded optimized decision threshold: {threshold}")
             except ValueError:
-                print("Warning: Could not read threshold file. Using default 0.5.")
+                print("Warning: Could not read threshold file. Using default (0.5).")
     else:
-        print("Warning: Threshold file not found. Using default 0.5.")
+        print("Warning: Threshold file not found. Using default (0.5).")
 
     # 5. Predict
     # Drop object_id so the input shape matches the training data
@@ -54,7 +54,7 @@ def run_prediction():
     print("Generating predictions...")
     y_probs = model.predict_proba(X_test)[:, 1]
     
-    # Apply Threshold
+    # Apply threshold
     y_preds = (y_probs >= threshold).astype(int)
 
     # 6. Create Partial Submission DataFrame

@@ -231,7 +231,7 @@ def get_gp_features(obj_id, obj_df):
     color_cooling_rate = gr_fade - gr_peak 
     
     rise_fade_ratio = rise_time / fade_time if fade_time > 0 else 0
-    area_under_curve = np.trapz(y_pred_g, t_grid)
+    area_under_curve = np.trapezoid(y_pred_g, t_grid)
     compactness = area_under_curve / peak_flux if peak_flux > 0 else 0
     rise_slope = amplitude / rise_time if rise_time > 1 else amplitude
     
