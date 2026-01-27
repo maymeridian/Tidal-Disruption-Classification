@@ -13,7 +13,7 @@ agar_heron_salph,0
 agarwaen_glae_ithildin,0
 agor_achas_aiglos,0
 agor_ang_adel,0
-aiglos_Gonhir_lacha,0
+aiglos_Gonhir_lacha,1
 alagos_mithren_harad,0
 alph_ang_graw,0
 amarth_cuil_cund,0
@@ -152,7 +152,7 @@ rach_grond_lalaith,0
 rhun_galad_ris,0
 riel_firiel_adab,0
 riel_sirion_gath,0
-rist_ai_gobennas,0
+rist_ai_gobennas,1
 roch_luith_hand,0
 roch_myril_ogol,0
 rochir_galvorn_faradrim,0
@@ -241,7 +241,7 @@ cabed_heledh_ai,1
 cabed_tamin_araf,0
 cae_mir_certh,0
 cair_morn_nimbrethil,0
-calad_rhun_mithren,1
+calad_rhun_mithren,0
 callon_alagos_erchion,0
 callon_ryn_tamin,0
 celeb_malad_ylf,0
@@ -265,7 +265,7 @@ eglan_nimbrethil_agarwaen,0
 elu_bain_saer,0
 emel_honeg_perian,0
 espalass_barad_thul,0
-espalass_gorn_hal,0
+espalass_gorn_hal,1
 fang_dol_lebenedh,0
 fang_toll_eilian,0
 faradrim_lavan_nost,0
@@ -459,7 +459,7 @@ fae_noroth_neledh,0
 faradrim_salph_imrath,0
 fern_nim_Tawarwaith,0
 fervain_aegas_cabed,0
-firen_lunt_echad,1
+firen_lunt_echad,0
 firiel_adab_tegilbor,0
 forodrim_toll_laug,0
 gador_rach_aiglos,1
@@ -546,7 +546,7 @@ rist_hervenn_gli,0
 roch_achas_tegilbor,0
 roch_agar_lossen,0
 roch_nagol_salab,0
-rochir_echad_rudh,1
+rochir_echad_rudh,0
 rusc_aran_badhor,0
 rusc_gellui_lain,0
 ryn_corch_nestad,0
@@ -609,10 +609,10 @@ celeb_cugu_aglareb,0
 corch_aras_ang,0
 cugu_gaw_meril,0
 cyron_ank_uruk,0
-dol_cugu_galenas,0
+dol_cugu_galenas,1
 dol_gwaun_aras,0
 draug_mereth_nimbrethil,0
-drego_baug_eredh,0
+drego_baug_eredh,1
 drego_dirnaith_hand,0
 drego_nimbrethil_dagnir,0
 duin_aras_navaer,0
@@ -696,7 +696,7 @@ nur_puig_hervenn,1
 peredhel_gul_haeron,0
 peredhel_maethor_faun,0
 pethron_bass_mithren,0
-pilin_glamor_laer,0
+pilin_glamor_laer,1
 pod_rudh_gwachaedir,1
 raug_ithron_galenas,0
 raug_paich_lorn,0
@@ -852,7 +852,7 @@ nestad_peredhel_imlad,0
 nim_dagnir_mithril,1
 nimbrethil_adar_ulug,0
 noroth_lam_tang,0
-nothrim_celeb_gwaun,1
+nothrim_celeb_gwaun,0
 nothrim_nadhras_lalaith,0
 ogol_ulug_Mithrim,0
 onodrim_sirion_dol,0
@@ -934,7 +934,7 @@ bronwe_rom_aran,0
 cae_lachenn_Gwathuirim,0
 celair_nim_hul,0
 cund_agar_emel,0
-curunir_gellui_nur,1
+curunir_gellui_nur,0
 curunir_gobennas_eirien,0
 cyron_gath_nimbrethil,0
 daen_cabor_sador,0
@@ -982,7 +982,7 @@ gwaloth_adan_luin,0
 gwaloth_gondrath_raug,0
 gwanur_aeruil_lebdas,0
 gwilwileth_hu_hub,0
-hador_saig_drafn,1
+hador_saig_drafn,0
 haeron_galenas_ithron,1
 haeron_gul_thurin,0
 hal_corch_gwachaedir,0
@@ -1058,7 +1058,7 @@ romru_lam_adar,0
 rovalug_min_naer,0
 rovalug_nim_galad,0
 saelor_narthan_braig,0
-saew_echad_baneth,1
+saew_echad_baneth,0
 saig_lebed_anann,0
 soga_fervain_Ithil,0
 sogannen_annon_lasguil,0
@@ -1126,7 +1126,7 @@ cirdan_rochir_rust,0
 cuil_limlug_gilgalad,0
 cund_aerlinn_riel,0
 curunir_ruith_firiel,0
-dannas_gobennas_gas,1
+dannas_gobennas_gas,0
 dannas_tavor_ira,0
 dol_Dornhoth_in,0
 draug_romru_achad,0
@@ -1248,9 +1248,9 @@ rach_suil_magor,0
 raegdan_sador_amlug,0
 ram_imrad_riel,0
 randir_lebdas_aes,0
-rhun_badhor_certh,1
+rhun_badhor_certh,0
 rist_galenas_lacha,0
-rist_mirdan_minas,1
+rist_mirdan_minas,0
 roch_gli_raegdan,0
 rochben_gwanur_achas,0
 rochir_balrog_ogol,0
@@ -1341,7 +1341,7 @@ dunedhel_cair_gond,0
 dunedhel_saelor_dirnaith,0
 eglan_rovalug_manadh,0
 eirien_elu_harad,0
-elu_heleg_rusc,1
+elu_heleg_rusc,0
 elu_lin_thangail,0
 faen_agarwaen_lin,0
 faen_minas_laer,0
@@ -1404,7 +1404,7 @@ lend_morn_lembas,0
 limlug_nath_faun,0
 lin_amlug_ah,0
 lin_ris_aglareb,0
-loss_thurin_edlothiad,0
+loss_thurin_edlothiad,1
 lossen_ingem_nestad,0
 lossen_saig_ogol,0
 luin_gador_ist,0
@@ -1593,7 +1593,7 @@ lebenedh_amath_tathar,0
 lhug_anwar_thurin,0
 lhug_rhach_menel,0
 lhug_sirion_saelor,0
-limlug_callon_rhach,1
+limlug_callon_rhach,0
 limlug_echad_harad,0
 lin_gas_amarth,0
 lossen_achad_Eru,0
@@ -1644,7 +1644,7 @@ Gonhir_achas_uruk,0
 Gonhir_cabor_talraph,0
 Mirion_gath_gellui,0
 Mithrim_lavan_aegas,0
-ablad_ai_heledh,1
+ablad_ai_heledh,0
 acharn_daen_lunt,0
 achas_tirith_agar,0
 aegas_glandagol_angos,0
@@ -1701,7 +1701,7 @@ gellui_gwaun_rach,0
 gil_haudh_maen,0
 glandagol_sogannen_Dornhoth,0
 glaur_draug_dol,1
-gli_dunedhel_pennas,1
+gli_dunedhel_pennas,0
 gond_amdir_thamas,0
 grond_tavor_callon,0
 guldur_achad_raug,0
@@ -1781,7 +1781,7 @@ pennas_bragol_Rochirrim,0
 perian_espalass_heron,0
 pethron_faun_ennorath,0
 pilin_aes_saew,0
-raegdan_amlug_cirdan,1
+raegdan_amlug_cirdan,0
 raegdan_hadhod_magol,0
 raegdan_nestad_gondrath,0
 ram_gaur_alae,0
@@ -1975,7 +1975,7 @@ ylf_cuil_haudh,0
 Elrim_Dornhoth_annon,0
 Elrim_cabor_imloth,0
 Eluwaith_cuin_tinnu,1
-Gonhir_adan_aras,1
+Gonhir_adan_aras,0
 Gonhir_minai_neledh,0
 Ithil_nim_Tawarwaith,1
 Mirion_celair_gwathui,0
@@ -2042,7 +2042,7 @@ forodrim_andrann_malad,0
 gador_cabed_edlothiad,0
 galas_fervain_eglan,0
 galas_lachenn_tavor,0
-galas_melethril_elu,1
+galas_melethril_elu,0
 galvorn_adab_melethron,0
 galvorn_rochben_fervain,1
 gaur_lend_gli,0
@@ -2158,9 +2158,9 @@ vin_iaun_alagos,0
 ylf_eilian_aear,0
 ylf_sirion_nothrim,0
 yll_uruk_Eru,0
-Dornhoth_rudh_hud,1
+Dornhoth_rudh_hud,0
 Elrim_adar_dam,0
-Ennor_lalaith_nimp,1
+Ennor_lalaith_nimp,0
 Eru_idhren_panas,0
 Gonhir_mil_lass,0
 Rochirrim_forodrim_callon,0
@@ -2174,7 +2174,7 @@ alag_gador_celair,0
 alagos_duin_hul,0
 amlug_thavron_agor,0
 anann_mirdan_malad,0
-andrann_in_fae,1
+andrann_in_fae,0
 angos_maethor_dam,1
 araf_Ennor_ank,0
 araf_pess_lacha,0
@@ -2186,7 +2186,7 @@ baug_uir_lalaith,0
 bellas_emel_iphant,0
 bellas_muil_lavan,0
 bragol_aglareb_luith,0
-bragol_dol_bronwe,1
+bragol_dol_bronwe,0
 braig_barad_hend,1
 bregedur_gas_gilgalad,0
 cabed_midh_bellas,0
@@ -2202,7 +2202,7 @@ cirdan_narthan_ira,0
 corf_salab_minuial,0
 cugu_pilin_rodwen,0
 cuil_Tawarwaith_meldir,0
-cuil_ylf_cugu,0
+cuil_ylf_cugu,1
 curunir_lalaith_ram,1
 daen_lathron_aderthad,0
 dagnir_tathar_pilin,0
@@ -2269,7 +2269,7 @@ lost_ylf_cyron,0
 lunt_fae_gwaloth,0
 lunt_rudh_caras,0
 maecheneb_eilian_manadh,0
-magor_baug_iaun,1
+magor_baug_iaun,0
 magor_lembas_panas,0
 melethron_lembas_mereth,0
 melethron_minuial_Gwathuirim,0
@@ -2390,7 +2390,7 @@ firiel_cae_gwael,0
 firiel_firion_randir,0
 forodrim_glamor_imrath,0
 gador_faun_sador,0
-galas_achad_lain,1
+galas_achad_lain,0
 galvorn_lebdas_callon,0
 gas_galas_mithren,0
 gaurwaith_neledh_tamin,0
@@ -2401,7 +2401,7 @@ glae_mir_rudh,0
 glass_mindon_minas,0
 glaur_haradrim_Rochirrim,0
 gondrath_edlothiad_saig,0
-gorn_lalaith_parf,1
+gorn_lalaith_parf,0
 graw_luithien_bregedur,0
 gul_amlug_nell,0
 gwathui_elu_adab,0
@@ -2414,7 +2414,7 @@ hast_thangail_balrog,0
 haust_ninglor_onodrim,0
 helegnen_dannas_puig,0
 helegnen_erchion_salab,0
-hend_gwaun_acharn,0
+hend_gwaun_acharn,1
 hervess_lam_heleg,0
 honeg_manadh_faun,0
 hub_anann_Rochirrim,0
@@ -2436,12 +2436,12 @@ lebdas_gobennas_emel,0
 lebed_ang_vin,0
 lend_draug_ennorath,0
 lend_lang_randir,0
-limlug_aglareb_hador,1
+limlug_aglareb_hador,0
 lin_imrad_maecheneb,1
 lobor_corf_ninglor,0
 lobor_cuil_baneth,1
 loss_yll_aegas,0
-lossen_badhor_lend,1
+lossen_badhor_lend,0
 lossen_gwador_hend,0
 lunt_glamog_daen,0
 lunt_hador_ris,0
@@ -2484,7 +2484,7 @@ sador_gwador_amath,0
 saer_iar_imrad,0
 saig_gwend_lachenn,0
 sammar_graw_dannas,0
-soga_Tawarwaith_hend,1
+soga_Tawarwaith_hend,0
 soga_rodwen_muinthel,0
 sogannen_magol_ungol,0
 suil_nadhras_nur,0
@@ -2547,9 +2547,9 @@ aras_faen_malad,0
 archam_midh_fang,0
 badhor_galvorn_ogol,0
 baneth_cabed_lossen,0
-baug_fast_lebed,1
+baug_fast_lebed,0
 braig_alag_nana,0
-braig_guldur_romru,1
+braig_guldur_romru,0
 cabor_ithron_maecheneb,0
 celeb_gondrath_hun,0
 certh_baneth_graw,0
@@ -2741,7 +2741,7 @@ eirien_Ithil_sirion,0
 fast_magol_hud,0
 fervain_gwaun_lebed,0
 fervain_ist_eryn,0
-fervain_lalaith_erchion,1
+fervain_lalaith_erchion,0
 fervain_lasguil_tachol,0
 firen_certh_Ennor,0
 forodrim_pilin_curunir,0
@@ -2814,7 +2814,7 @@ minai_gobennas_riel,0
 minai_hwiniol_yll,0
 minas_sogannen_lebdas,0
 mithril_thul_braig,0
-morgul_imloth_salab,1
+morgul_imloth_salab,0
 muil_hud_dannas,0
 nadhras_rudh_hwiniol,0
 naer_faradrim_cae,0
@@ -2826,13 +2826,13 @@ ninglor_tang_duin,0
 noroth_sador_bronwe,0
 nost_nur_adab,0
 nur_ah_eirien,0
-ogol_echad_luin,0
+ogol_echad_luin,1
 ogol_panas_hervess,0
 ogol_pent_manadh,0
 ogol_pilin_ang,0
 pent_tamin_mirdan,0
 pethron_achas_thangail,0
-puig_aglareb_dam,1
+puig_aglareb_dam,0
 rach_dol_onodrim,1
 raef_minai_alae,0
 raegdan_aiglos_thul,0
@@ -2860,7 +2860,7 @@ thangail_ablad_aduial,0
 thangail_in_cuin,0
 thavron_aduial_fast,0
 uan_aith_lin,0
-Elrim_morn_cabed,1
+Elrim_morn_cabed,0
 Ennor_bronwe_ninglor,0
 Ennor_lavan_ris,0
 Ennor_lebdas_heleg,0
@@ -3008,7 +3008,7 @@ navaer_cuil_rusc,1
 nim_minas_bellas,0
 nimbrethil_andrann_gwael,1
 noroth_iphant_randir,0
-nur_muinthel_haradrim,1
+nur_muinthel_haradrim,0
 perian_aear_rovalug,0
 pethron_lass_lalaith,0
 pod_pent_gath,0
@@ -3038,7 +3038,7 @@ uruk_adar_caras,0
 ylf_galenas_tang,0
 ylf_inias_aerlinn,0
 ylf_lebdas_saer,0
-Druadan_gul_per,1
+Druadan_gul_per,0
 Eru_mindon_alph,0
 Gwathuirim_baug_braig,0
 Ithil_aglareb_gwathui,0
@@ -3261,7 +3261,7 @@ eryn_Gonhir_gwael,0
 eryn_lain_gond,0
 faradrim_thavron_saelor,0
 faun_adab_honeg,0
-firen_elu_haust,0
+firen_elu_haust,1
 firiel_elvellon_rhun,0
 fuin_amdir_sirion,0
 gador_glandagol_elvellon,0
@@ -3416,7 +3416,7 @@ aglareb_heledir_rist,0
 agor_tinuviel_anann,0
 aith_thurin_raef,0
 alae_iar_dol,0
-amath_bain_loss,1
+amath_bain_loss,0
 amloth_bass_thurin,0
 amon_guldur_lain,1
 anwar_ogol_nath,0
@@ -3486,7 +3486,7 @@ hervenn_lhug_ai,0
 honeg_muil_aear,0
 hu_guldur_lagor,0
 hud_faen_nell,0
-hud_lebed_adan,1
+hud_lebed_adan,0
 hul_iar_fuin,0
 hun_Mithrim_pent,0
 hwiniol_celair_nagol,0
@@ -3504,7 +3504,7 @@ lass_nagol_Ennor,0
 lathron_gond_suil,0
 law_lathron_celon,0
 lebed_nagol_thurin,0
-lebenedh_iar_bragol,0
+lebenedh_iar_bragol,1
 lebenedh_lagor_aiglos,0
 lembas_pod_morgul,0
 lhug_raef_rhosc,1
@@ -3526,7 +3526,7 @@ myril_gwael_mindon,0
 naer_ah_gwador,0
 nimbrethil_ennorath_gul,0
 nimp_dagnir_lobor,0
-ninglor_menel_Eru,1
+ninglor_menel_Eru,0
 noroth_lin_hervess,0
 nur_rhun_tang,1
 ogol_cair_tavor,0
@@ -3552,7 +3552,7 @@ roch_fern_minai,0
 rochben_randir_aran,0
 rochir_Elrim_tamin,0
 romru_cund_gwathui,1
-romru_uruk_gil,1
+romru_uruk_gil,0
 rovalug_amloth_gilgalad,0
 rudh_aiglos_talraph,0
 rudh_rochben_drego,0
@@ -3585,7 +3585,7 @@ aeruil_lebed_galadh,0
 aeruil_nimp_lend,0
 agor_melethron_inias,0
 ai_roch_lacha,0
-alae_fast_cirdan,1
+alae_fast_cirdan,0
 alae_nana_midh,0
 alag_mithren_gwarth,0
 amarth_nidh_fae,0
@@ -3649,7 +3649,7 @@ haeron_adar_ithron,0
 haeron_rochben_bass,0
 hand_amlug_tirith,1
 hand_salph_raegdan,0
-harad_sogannen_fuin,0
+harad_sogannen_fuin,1
 haudh_aphadrim_gador,0
 haudh_faradrim_lhug,0
 helegnen_nost_rusc,0
@@ -3666,7 +3666,7 @@ iphant_cund_baug,0
 ithildin_thurin_ogol,0
 lachenn_bass_dol,0
 laes_faen_amlug,0
-lang_aderthad_gwend,1
+lang_aderthad_gwend,0
 lang_paich_Dornhoth,0
 lathron_calad_certh,0
 lavan_gwachaedir_cirdan,0
@@ -3735,7 +3735,7 @@ sirion_aphadrim_nim,0
 soga_ris_lin,0
 tang_minas_honeg,0
 tathar_gondrath_ithron,0
-tavor_gwachaedir_ira,1
+tavor_gwachaedir_ira,0
 tavor_rochben_lebenedh,0
 tegilbor_thavron_ist,0
 thangail_Ennor_salph,0
@@ -3784,7 +3784,7 @@ balrog_mereth_drego,0
 bass_tathar_saelor,0
 baug_bain_maecheneb,0
 bellas_hun_hador,0
-bronwe_mithril_lass,0
+bronwe_mithril_lass,1
 caras_tinnu_nadhras,1
 celon_ablad_agarwaen,0
 cenedril_barad_duin,0
@@ -3805,7 +3805,7 @@ dunedhel_rhovan_navaer,0
 eglan_naer_cyron,0
 emel_mithril_rusc,1
 ennorath_myril_limlug,0
-fang_celon_gwachaedir,1
+fang_celon_gwachaedir,0
 fern_rust_alae,0
 fervain_faun_mereth,0
 fervain_hast_Mithrim,0
@@ -3836,7 +3836,7 @@ gwaun_fast_hend,0
 gwilwileth_aphadrim_nadhras,0
 gwilwileth_bain_roch,0
 hador_mil_amdir,0
-hal_gorn_glamor,0
+hal_gorn_glamor,1
 harad_erchion_eglan,0
 haradrim_aras_minuial,0
 heledh_lossen_ulug,0
@@ -3879,7 +3879,7 @@ limlug_nidh_alag,0
 limlug_puig_meldir,0
 lin_law_laug,0
 lorn_helegnen_ithildin,0
-luin_Gonhir_ruith,0
+luin_Gonhir_ruith,1
 luin_gilgalad_hadhod,1
 luith_Sindarin_annon,0
 lunt_aear_lobor,0
@@ -3952,7 +3952,7 @@ talraph_nadhras_aith,1
 talraph_raegdan_aith,0
 tang_malad_cugu,0
 tathar_dirnaith_hun,0
-tathar_navaer_cund,0
+tathar_navaer_cund,1
 tavor_amath_Ennor,0
 thangail_glandagol_aiglos,0
 thor_eirien_aegas,0
@@ -4123,7 +4123,7 @@ vin_gwend_badhor,0
 Druadan_tobas_gas,0
 Elrim_daen_ank,0
 Ennor_corf_myril,0
-Ennor_rusc_bellas,1
+Ennor_rusc_bellas,0
 Eru_ruith_cair,0
 Tawarwaith_glamor_hu,1
 acharn_glae_balrog,0
@@ -4131,7 +4131,7 @@ adar_perian_lachenn,0
 adel_tathar_ungol,0
 aduial_muil_aderthad,0
 aear_galas_agor,0
-aear_limlug_elvellon,1
+aear_limlug_elvellon,0
 aear_melethron_nothrim,0
 aeglir_achad_edlothiad,0
 aerlinn_firen_barad,0
@@ -4192,7 +4192,7 @@ gador_bain_meril,0
 gador_harad_tinnu,0
 gath_galas_duin,0
 gaurwaith_dunedhel_galas,0
-gaurwaith_lass_mund,1
+gaurwaith_lass_mund,0
 gil_hul_balrog,0
 gilgalad_panas_nestad,0
 glamog_ang_rhosc,0
@@ -4256,7 +4256,7 @@ nell_imloth_Ithil,0
 nimp_glass_limlug,0
 nost_rhovan_bregedur,0
 nur_gli_cund,0
-onodrim_sador_saer,1
+onodrim_sador_saer,0
 pendrath_mindon_Elrim,0
 per_cugu_riel,0
 per_hervenn_gwathui,0
@@ -4363,9 +4363,9 @@ fervain_noroth_menel,0
 forodrim_in_saer,0
 galadh_hador_sogannen,0
 galadhrim_tegilbor_haradrim,0
-galas_dunedhel_rist,1
+galas_dunedhel_rist,0
 galas_morgul_alae,0
-galvorn_dunedhel_thor,1
+galvorn_dunedhel_thor,0
 galvorn_min_fern,0
 gellui_cuil_mil,0
 gellui_rochir_cabor,0
@@ -4461,7 +4461,7 @@ rhosc_eirien_rist,0
 rhovan_saig_eryn,0
 rist_lavan_drafn,0
 rom_in_eryn,0
-romru_limlug_amloth,0
+romru_limlug_amloth,1
 rovalug_fast_curunir,0
 rudh_melethron_toll,0
 sador_lebenedh_imrad,0
@@ -4476,10 +4476,10 @@ talraph_tathar_lebenedh,0
 tamin_elvellon_amarth,0
 tann_tang_cund,0
 tavor_eredh_hervenn,0
-tegilbor_baug_hud,1
+tegilbor_baug_hud,0
 thamas_perian_rhun,0
 thangail_galadh_maecheneb,0
-thangail_narthan_hun,0
+thangail_narthan_hun,1
 thurin_fang_aith,0
 thurin_fervain_alae,0
 thurin_gaur_Mirion,0
@@ -4537,7 +4537,7 @@ bellas_grond_gwilwileth,0
 bellas_ira_lend,0
 bellas_ithildin_anann,0
 bragol_aeglir_tamin,0
-cabed_Gwathuirim_amlug,1
+cabed_Gwathuirim_amlug,0
 cabed_rusc_aiglos,0
 calad_law_heron,0
 callon_ira_gwilwileth,0
@@ -4712,7 +4712,7 @@ ah_bregedur_firion,0
 ah_tinnu_aglareb,0
 aiglos_agarwaen_faen,0
 alae_Eru_andrann,0
-alagos_adab_Tawarwaith,1
+alagos_adab_Tawarwaith,0
 alagos_galad_thavron,0
 alph_espalass_gwador,0
 amloth_gond_alagos,0
@@ -4761,7 +4761,7 @@ eredh_iar_gwilwileth,0
 espalass_heledir_raug,0
 faradrim_gwaloth_adan,0
 fast_randir_gellui,0
-fervain_ruith_baneth,1
+fervain_ruith_baneth,0
 firiel_gwathui_gil,0
 firiel_peredhel_morn,0
 forodrim_hal_adab,0
@@ -4869,7 +4869,7 @@ sador_aduial_dagnir,0
 sador_uruk_cenedril,0
 salab_imrad_rovalug,0
 salab_lain_limlug,0
-sirion_alph_rach,0
+sirion_alph_rach,1
 sirion_iaun_gwend,0
 sirion_nagol_raug,0
 soga_lachenn_gellui,0
@@ -4914,7 +4914,7 @@ braig_lobor_pess,0
 bronwe_thurin_harad,0
 callon_ogol_faun,0
 caras_aglareb_ninglor,0
-caras_cae_bronwe,1
+caras_cae_bronwe,0
 celair_lunt_dunadan,0
 celeb_romru_dirnaith,0
 celeb_yll_acharn,0
@@ -4963,7 +4963,7 @@ glaur_glandagol_uir,0
 gli_caras_baneth,0
 graw_rodwen_Tawarwaith,0
 gwachaedir_ang_aiglos,0
-gwachaedir_harad_lacha,1
+gwachaedir_harad_lacha,0
 gwael_Eluwaith_eirien,1
 gwael_ablad_helegnen,0
 gwarth_galadh_cyron,0
@@ -5046,7 +5046,7 @@ riel_uir_calad,0
 ris_uir_aes,0
 rochir_cair_saer,0
 rovalug_caras_morn,0
-rovalug_muil_ithildin,1
+rovalug_muil_ithildin,0
 saelor_gil_nana,0
 saelor_gondrath_nimp,0
 saelor_nidh_meldir,0
@@ -5058,13 +5058,13 @@ sogannen_agar_lalaith,0
 suil_araf_rhun,0
 suil_dunadan_ithron,0
 suil_lost_gwathui,0
-talraph_cugu_lebed,1
+talraph_cugu_lebed,0
 tathar_amon_melethron,0
 tavor_dannas_drafn,0
 tavor_maethor_bass,0
 thamas_lembas_aear,0
 thor_tinuviel_tann,0
-thul_limlug_mithren,1
+thul_limlug_mithren,0
 uan_ennorath_firen,0
 ulug_hadhod_Elrim,0
 vin_eredh_rhovan,0
@@ -5168,13 +5168,13 @@ onodrim_aras_pent,0
 pennas_guldur_lobor,0
 pent_saew_limlug,1
 per_aglareb_adan,0
-per_pess_lin,0
+per_pess_lin,1
 peredhel_in_tirith,0
 peredhel_tobas_nur,0
 pess_graw_bass,0
 pess_nadhras_hun,0
 pethron_callon_baug,0
-pethron_hast_agor,1
+pethron_hast_agor,0
 pod_inias_baneth,0
 raegdan_lebenedh_gwaun,0
 ram_iar_maethor,0
@@ -5206,16 +5206,16 @@ uanui_aes_araf,0
 uanui_tinuviel_onodrim,0
 uir_dannas_galad,0
 vin_rhovan_rhach,0
-Dornhoth_luin_gondrath,1
+Dornhoth_luin_gondrath,0
 Druadan_neledh_aderthad,0
 Gonhir_fuin_aeruil,0
 Gwathuirim_helegnen_luin,0
-Rochirrim_ank_calad,0
+Rochirrim_ank_calad,1
 achas_glandagol_malad,0
 adan_tann_haeron,0
 adar_agor_elvellon,0
 aderthad_galenas_adar,0
-aear_onodrim_Ithil,1
+aear_onodrim_Ithil,0
 aegas_midh_ist,0
 aerlinn_edlothiad_hal,0
 agarwaen_lorn_iphant,0
@@ -5235,20 +5235,20 @@ bronwe_fuin_ruith,0
 bronwe_morn_aegas,0
 cabor_law_morn,0
 cabor_tinuviel_eredh,0
-cair_archam_dirnaith,1
+cair_archam_dirnaith,0
 callon_achas_soga,0
 callon_nestad_mindon,0
 celeb_galadhrim_pendrath,0
 certh_Mithrim_yll,0
 cirion_ruith_aiglos,0
-corf_corch_alph,1
+corf_corch_alph,0
 cugu_aranarth_lacha,0
 dagnir_rust_ogol,0
 dirnaith_adar_thangail,0
 drafn_gaurwaith_Elrim,0
-duin_bronwe_badhor,0
+duin_bronwe_badhor,1
 duin_nothrim_baug,0
-dunadan_onodrim_cugu,1
+dunadan_onodrim_cugu,0
 echad_galadh_bass,0
 elu_Eluwaith_aerlinn,0
 elvellon_imrath_eryn,0
@@ -5327,17 +5327,17 @@ pennas_galadh_mirdan,0
 pess_gilgalad_braig,0
 raug_mithril_gwador,0
 rhosc_agar_nath,0
-riel_Rochirrim_ram,0
+riel_Rochirrim_ram,1
 riel_roch_alph,0
 rochir_lebenedh_iphant,0
 romru_lost_lebenedh,0
 rust_Ennor_nothrim,0
-rust_gaur_aderthad,1
-sador_pod_imrath,0
+rust_gaur_aderthad,0
+sador_pod_imrath,1
 saelor_parf_lang,0
 sirion_law_morn,0
-sogannen_celair_nana,1
-suil_firen_firion,1
+sogannen_celair_nana,0
+suil_firen_firion,0
 suil_gwador_sirion,0
 tachol_laer_yll,0
 talraph_hal_idhren,0
@@ -5358,7 +5358,7 @@ Druadan_espalass_balrog,0
 Rochirrim_Gwathuirim_tachol,0
 Rochirrim_nimp_graw,1
 Tawarwaith_ithildin_braig,0
-adar_hul_iaun,1
+adar_hul_iaun,0
 aderthad_mindon_gador,1
 aegas_lebdas_nell,0
 aeglir_duin_lin,0
@@ -5449,7 +5449,7 @@ lang_luithien_dunadan,0
 lasguil_lacha_imloth,0
 lasguil_morgul_nestad,1
 lavan_cabor_imlad,0
-lebed_heron_grond,0
+lebed_heron_grond,1
 lebed_lasguil_malad,0
 lebed_pilin_cuin,0
 lend_tinuviel_emel,1
@@ -5478,7 +5478,7 @@ nath_archam_nost,0
 nath_hervess_glass,0
 nell_achad_tamin,0
 nell_dagnir_hwiniol,0
-nidh_imrad_tinuviel,0
+nidh_imrad_tinuviel,1
 nimbrethil_lebdas_hast,0
 nimp_lachenn_romru,0
 nothrim_gath_nath,0
@@ -5489,7 +5489,7 @@ panas_bass_cirion,0
 parf_alae_toll,0
 parf_glae_hervess,0
 pendrath_nestad_tavor,0
-per_cabed_meril,0
+per_cabed_meril,1
 per_tinuviel_perian,0
 pess_aes_lachenn,0
 puig_nimp_bass,0
@@ -5520,8 +5520,8 @@ thor_aderthad_tachol,0
 tinnu_maen_hervenn,0
 tinuviel_bass_rust,0
 tirith_imlad_maen,0
-toll_Tawarwaith_ylf,1
-uan_gwathui_agarwaen,0
+toll_Tawarwaith_ylf,0
+uan_gwathui_agarwaen,1
 uanui_paich_bass,0
 uir_echad_tavor,1
 ylf_saelor_romru,0
@@ -5652,14 +5652,14 @@ muinthel_Ennor_inias,0
 navaer_hud_celeb,1
 nell_Ithil_romru,0
 nim_pennas_imrath,0
-nimp_midh_cugu,1
-nost_braig_aranarth,1
+nimp_midh_cugu,0
+nost_braig_aranarth,0
 nost_glandagol_aith,0
 nothrim_duin_haradrim,0
 nur_thor_graw,0
 panas_lasguil_cirdan,0
 pennas_gorn_ryn,0
-per_nell_elu,1
+per_nell_elu,0
 peredhel_glamog_ylf,0
 perian_luith_helegnen,0
 pess_rist_thangail,0
@@ -5719,7 +5719,7 @@ alph_iaun_raegdan,0
 amath_gaur_saew,0
 amlug_dagnir_rom,0
 anann_lain_alae,0
-angos_espalass_aegas,1
+angos_espalass_aegas,0
 annon_draug_glass,0
 annon_nothrim_eirien,0
 aphadrim_hal_curunir,0
@@ -5727,7 +5727,7 @@ araf_gwathui_heleg,0
 aran_ank_haudh,0
 aran_elu_dunedhel,0
 aran_ist_thangail,0
-bain_caras_imlad,1
+bain_caras_imlad,0
 bass_tathar_min,0
 bellas_ah_aes,0
 bellas_barad_aerlinn,0
@@ -5747,7 +5747,7 @@ drafn_drego_raef,0
 drafn_gaurwaith_alph,0
 dunedhel_andrann_raef,0
 dunedhel_ira_aduial,0
-edlothiad_celon_aegas,1
+edlothiad_celon_aegas,0
 eglan_gil_menel,1
 eirien_Mithrim_amloth,0
 elvellon_mir_nana,1
@@ -5796,7 +5796,7 @@ haradrim_gas_tirith,0
 haradrim_rhun_tirith,0
 haudh_fern_dannas,0
 haust_amlug_erchion,0
-haust_eglan_hervess,0
+haust_eglan_hervess,1
 heledh_cabed_ruith,0
 heledir_raug_lost,0
 heleg_erchion_pod,0
@@ -5848,7 +5848,7 @@ muinthel_cuil_inias,0
 myril_navaer_galenas,0
 nagol_Dornhoth_tinnu,0
 nagol_tann_imrath,0
-nana_cenedril_hervenn,1
+nana_cenedril_hervenn,0
 nana_haradrim_thor,0
 nana_mithren_maethor,0
 nath_Gonhir_iaun,0
@@ -5871,7 +5871,7 @@ rhovan_celair_lhug,0
 rhun_ablad_thamas,1
 rhun_baneth_saer,0
 roch_tang_uan,0
-rochir_lagor_hervess,1
+rochir_lagor_hervess,0
 rom_celair_raug,0
 romru_suil_hervess,0
 rovalug_romru_dannas,0
@@ -5893,7 +5893,7 @@ tobas_magol_aeruil,0
 ulug_Tawarwaith_morgul,1
 ungol_nell_mithril,0
 vin_draug_glae,1
-Druadan_eirien_nagol,1
+Druadan_eirien_nagol,0
 Eluwaith_mereth_mirdan,0
 Gonhir_eredh_noroth,0
 Gonhir_gwanur_celair,0
@@ -5911,7 +5911,7 @@ aglareb_elvellon_Ithil,0
 agor_ira_thul,0
 aiglos_gwaloth_panas,0
 aith_gador_aeruil,0
-alae_dirnaith_tann,1
+alae_dirnaith_tann,0
 alph_aglareb_Elrim,0
 alph_mereth_uanui,1
 ang_nadhras_aes,0
@@ -6019,7 +6019,7 @@ lobor_lass_dunedhel,0
 lobor_minuial_galas,1
 lorn_adan_dagnir,0
 luin_celon_riel,0
-lunt_araf_agar,1
+lunt_araf_agar,0
 lunt_caras_galvorn,0
 maethor_rust_faen,0
 meldir_bronwe_ogol,0
@@ -6095,7 +6095,7 @@ amarth_rochben_gwador,0
 anann_elvellon_lathron,0
 angos_dol_mirdan,0
 ank_manadh_baug,0
-annon_mindon_eglan,0
+annon_mindon_eglan,1
 araf_loss_lavan,0
 archam_helegnen_galadhrim,0
 bain_uir_tobas,0
@@ -6202,7 +6202,7 @@ paich_parf_fae,0
 parf_mund_maen,0
 parf_pent_law,0
 pendrath_ang_lhug,0
-pent_amloth_in,1
+pent_amloth_in,0
 per_dunedhel_amath,0
 perian_Elrim_faun,0
 perian_heleg_in,0
@@ -6242,7 +6242,7 @@ Dornhoth_lobor_rust,0
 Elrim_gwanur_duin,1
 Eluwaith_dol_rach,0
 Eluwaith_glae_nim,0
-Eluwaith_roch_faen,1
+Eluwaith_roch_faen,0
 Gwathuirim_pent_aras,0
 Gwathuirim_rhovan_noroth,0
 Sindarin_Rochirrim_thor,0
@@ -6289,7 +6289,7 @@ dam_heledir_faun,0
 dannas_iaun_per,0
 echad_agarwaen_pennas,0
 edlothiad_cirdan_limlug,0
-eglan_araf_gwachaedir,1
+eglan_araf_gwachaedir,0
 eilian_aglareb_laes,0
 eirien_galadhrim_hervenn,1
 eirien_pess_cund,0
@@ -6344,7 +6344,7 @@ helegnen_heleg_nost,0
 hend_amlug_nur,0
 hervenn_rusc_graw,0
 hervess_aear_uanui,0
-hervess_lhug_limlug,0
+hervess_lhug_limlug,1
 ingem_rochben_fast,0
 ingem_tang_gilgalad,0
 iphant_Tawarwaith_ulug,0
@@ -6390,7 +6390,7 @@ roch_yll_cuin,0
 rochir_rhovan_gaurwaith,0
 rochir_rudh_dol,0
 rodwen_ira_aes,0
-rovalug_cirion_rhun,1
+rovalug_cirion_rhun,0
 rudh_uir_morgul,0
 rusc_aphadrim_bain,0
 ryn_lunt_balrog,0
@@ -6400,7 +6400,7 @@ saig_rhovan_adan,0
 sammar_ablad_Sindarin,0
 sirion_lass_cirdan,1
 sogannen_noroth_gwend,0
-talraph_nagol_baneth,0
+talraph_nagol_baneth,1
 talraph_saelor_cugu,0
 tavor_glamor_heledh,0
 thamas_cenedril_hul,0
@@ -6472,10 +6472,10 @@ fast_muil_aes,0
 faun_glandagol_raug,0
 fern_sammar_Ennor,0
 fervain_gellui_Mirion,0
-fervain_gwaun_hadhod,1
+fervain_gwaun_hadhod,0
 firen_nadhras_thor,0
 firiel_amlug_imloth,0
-galas_gaw_drafn,0
+galas_gaw_drafn,1
 galvorn_haudh_celeb,0
 gath_iaun_galas,0
 gaurwaith_achas_mirdan,0
@@ -6532,7 +6532,7 @@ magol_dagnir_eirien,0
 malad_dagnir_paich,0
 manadh_thul_amon,0
 melethril_lhug_acharn,0
-melethril_meldir_annon,1
+melethril_meldir_annon,0
 minai_maethor_tathar,0
 minai_pod_andrann,1
 minas_galvorn_achas,0
@@ -6555,7 +6555,7 @@ noroth_ris_cuil,0
 nur_pod_eredh,0
 onodrim_dagnir_eglan,0
 parf_fuin_erchion,1
-parf_sirion_glae,1
+parf_sirion_glae,0
 parf_ulug_anwar,0
 pendrath_thangail_glamog,0
 pennas_helegnen_andrann,0
@@ -6564,9 +6564,9 @@ peredhel_barad_rist,0
 perian_law_lossen,0
 raef_eredh_gwaloth,0
 raef_talraph_gador,0
-rhovan_aras_ank,1
+rhovan_aras_ank,0
 ris_rochben_yll,0
-rist_raef_glamor,1
+rist_raef_glamor,0
 romru_rhun_lathron,0
 saelor_hu_vin,0
 saer_adar_anann,0
@@ -6655,7 +6655,7 @@ galad_haudh_salab,0
 galadhrim_gwarth_echad,0
 galenas_lobor_panas,0
 gas_mil_hend,0
-gas_tachol_lass,0
+gas_tachol_lass,1
 gath_bronwe_hadhod,0
 gath_nimp_law,0
 gil_aeglir_haust,0
@@ -6690,7 +6690,7 @@ lalaith_gwend_adab,0
 lalaith_panas_drego,0
 lam_Mithrim_gath,0
 lang_firiel_maen,0
-lang_gwador_sogannen,1
+lang_gwador_sogannen,0
 lang_lachenn_noroth,0
 lathron_andrann_achas,0
 law_ang_raegdan,0
@@ -6776,7 +6776,7 @@ Ennor_law_grond,0
 Eru_cirion_amath,0
 Gwathuirim_imloth_ithron,0
 Mithrim_pennas_eredh,0
-Sindarin_cae_laes,1
+Sindarin_cae_laes,0
 Tawarwaith_gaw_laug,0
 ablad_iphant_elvellon,0
 adan_Tawarwaith_cund,0
@@ -6864,7 +6864,7 @@ hun_rudh_lin,0
 hwiniol_nothrim_ulug,0
 hwiniol_riel_eilian,0
 iar_lobor_iphant,0
-iaun_magol_corch,0
+iaun_magol_corch,1
 iaun_pethron_aras,0
 idhren_ithildin_lam,0
 imlad_cabed_glamor,0
@@ -6876,12 +6876,12 @@ lalaith_gador_tang,0
 lasguil_lam_forodrim,0
 lathron_draug_malad,0
 laug_tavor_nagol,0
-lavan_dunadan_gul,0
+lavan_dunadan_gul,1
 law_nimp_aegas,0
 lembas_mithril_nell,0
 lin_minuial_loss,0
 lobor_amloth_thangail,0
-loss_bellas_lost,1
+loss_bellas_lost,0
 lossen_tobas_gilgalad,0
 lost_cugu_laer,0
 luith_bragol_gwaun,0
@@ -7071,7 +7071,7 @@ maen_heron_rochir,0
 maethor_aear_lathron,0
 meldir_amon_toll,0
 melethron_lavan_rach,0
-merilin_forodrim_gath,1
+merilin_forodrim_gath,0
 min_eirien_glamor,0
 mindon_nana_eilian,0
 mirdan_lost_paich,0
