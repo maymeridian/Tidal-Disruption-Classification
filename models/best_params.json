@@ -1,8 +1,12 @@
 {
-    "iterations": 1159,
-    "depth": 7,
-    "learning_rate": 0.04031960201543842,
-    "l2_leaf_reg": 3.0150169810935346,
-    "rsm": 0.40344592088505804,
-    "scale_pos_weight": 19.071618862182838
+    "iterations": 1275,
+    "learning_rate": 0.010281486520982671,
+    "border_count": 253,
+    "l2_leaf_reg": 4.340525286356986,
+    "random_strength": 3.099540025390237,
+    "rsm": 0.7628812001901858,
+    "grow_policy": "Depthwise",
+    "depth": 10,
+    "min_data_in_leaf": 19,
+    "scale_pos_weight": 27.43364802370848
 }
