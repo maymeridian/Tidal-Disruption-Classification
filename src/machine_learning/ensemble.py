@@ -214,27 +214,49 @@ class Snake(nn.Module):
         return x + (1.0 / self.alpha) * torch.sin(self.alpha * x).pow(2)
 
 
-
-
-
-
-
-
 # -------------------------------
 # Loss Functions : 
-
 # Logit Adjustment Loss
 # WeightedBCELoss
 # Cross Entropy
 # FocalLoss
 # Soft F1 Loss
-# AsymetricLoss
 # PolyLoss
 # LDAMLoss
 # TverskyLoss with high beta
 # FocalTverskyLoss
 # Cross Balanced Focal Loss
 # Matthews Correlation Coefficient
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2.0, reduction='mean'):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction=reduction
+
+    def forward(self, inputs, targets):
+        bce_loss = F.binary_cross_entropy_with_logits(logits, targets.float(), reduction='none')
+        pt = torch.exp(-bce_loss) # prevent nan values
+        focal_loss = self.alpha * (1-pt) ** self.gamma * bce_loss
+        return focal_loss.mean()
+
+class PolyLoss(nn.Module):
+    # polynomial expansion of focal loss
+    def __init__(self, alpha=0.25, gamma=2.0):
+        super().__init__()
+        self.epsilon = epsilon
+        self.reduction = reduction
+    
+    def forward(self, logits, targets):
+        bce_loss = F.binary_cross_entropy_with_logits(logits, targets.float(), reduction='none')
+        pt = torch.exp(-bce_loss)
+        # poly1 form: CE + epsilon * (1-pt)
+        poly_loss = bce_loss + self.epsilon * (1-pt)
+
+        if self.reduction == 'mean':
+            return poly_loss.mean()
+        return poly_loss
 
 
 class LogitAdjustmentLoss(nn.Module):
@@ -247,6 +269,85 @@ class LogitAdjustmentLoss(nn.Module):
     def forward(self, logits, targets):
         # (B, 2)
         adjusted_logits 
+
+# label-distribution-aware margin loss
+class LDAMLoss(nn.module):
+    def __init__():
+        super.__init__()
+
+
+class TverskyLoss(nn.Module):
+    def __init__(self, alpha=0.3, beta=0.7, smooth=1e-6):
+        super().__init__()
+        # alpha: false-positive sensitivity, 
+        # beta: false negative sensitivity,
+        # high beta (0.7-0.8) emphasizes recall
+
+        self.alpha = alpha
+        self.beta = beta
+        self.smooth = smooth
+
+    def forward(self, logits, targets):
+        probs = torch.sigmoid(logits)
+        targets = targets.float()
+        tp = (probs * targets).sum()
+        fp = (probs * (1-targets)).sum()
+        fn = ((1-probs) * targets).sum()
+
+        tversky_index = (tp + self.smooth) / (tp + self.alpha * fp + self.beta * fn + self.smooth)
+        return 1 - tversky_index
+
+
+class FocalTverskyLoss(nn.Module):
+    def __init__(self, alpha=0.3, beta=0.7, gamma=1.33, smooth=1e-6):
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.smooth = smooth
+
+    def forward(slef, logits, targets):
+        probs = torch.sigmoid(logits)
+        targets = targets.float()
+        tp = (probs * targets).sum()
+        fp = (probs * (1-targets)).sum()
+        fn = ((1-probs) * targets).sum()
+
+        tversky = (tp + self.smooth) / (tp + self.alpha * fp + self.beta * fn + self.smooth)
+
+        # loss = (1 - tversky)^gamma
+        return torch.pow((1 - tversky), self.gamma)
+
+
+
+
+
+
+class ClassBalancedFocalLoss(nn.Module):
+    def __init__():
+        super.__init__()
+
+
+class MCCloss(nn.Module):
+    def __init__():
+        super.__init__()
+
+
+class SoftF1Loss(nn.Module):
+    def __init__(self, epsilon=1e-7):
+        super().__init__()
+        self.epsilon = epsilon
+    
+    def forward(self, logits, targets):
+        # Input Logits (B, 1) -> Sigmoid -> Probabilities
+        probs = torch.sigmoid(logits)
+        y_true = targets.float()
+        
+        tp = (probs * y_true).sum(dim=0)
+        fp = (probs * (1 - y_true)).sum(dim=0)
+        fn = ((1 - probs) * y_true).sum(dim=0)
+        
+        f1 = 2 * tp / (2 * tp + fp + fn + self.epsilon)
+        return 1 - f1.mean()
 
 
 
@@ -287,26 +388,55 @@ class LogitAdjustmentLoss(nn.Module):
 
 
 
+# supposed to show training progress
+class Monitor:
+    def __init__(self):
+        self.train_losses = []
+        self.val_losses = []
+        self.val_f1s = []
+        
+    def update(self, t_loss, v_loss, v_f1):
+        self.train_losses.append(t_loss)
+        self.val_losses.append(v_loss)
+        self.val_f1s.append(v_f1)
+        
+    def plot(self):
+        clear_output(wait=True)
+        fig, ax1 = plt.subplots(figsize=(10, 5))
+        
+        ax1.plot(self.train_losses, label='Train Loss', color='blue', alpha=0.6)
+        ax1.plot(self.val_losses, label='Val Loss', color='orange', alpha=0.6)
+        ax1.set_xlabel('Epochs')
+        ax1.set_ylabel('Loss')
+        ax1.legend(loc='upper left')
+        
+        ax2 = ax1.twinx()
+        ax2.plot(self.val_f1s, label='Val F1', color='green')
+        ax2.set_ylabel('F1 Score')
+        ax2.legend(loc='upper right')
+        
+        plt.title('Training Progress')
+        plt.show()
+
+# want secondary function to display results of each training run from each ensemble run
 
 
 
 
-# essentially, search all possible world lines for the correct model for this problem :P
-def search_all_world_lines():
-    print("""⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-    ⣿⣿⣿⣿⣿⣿⡿⠟⠋⠉⠉⠉⠙⠛⢿⣿⣿⣿⣿⣿
-    ⣿⣿⡟⢩⣶⠂⠄⠄⣠⣶⣿⣯⣉⣷⣦⠈⣻⣿⣿⣿
-    ⣿⣿⣿⣄⠁⠄⠄⢸⡿⠟⠛⠉⠉⠉⠛⢧⠘⣿⣿⣿
-    ⣿⣿⣿⡿⠄⠄⠄⠄⢀⠄⣠⡄⠄⠄⠄⠄⠄⢹⣿⣿
-    ⣿⣿⣿⡇⠄⠄⠄⣸⡘⢴⣻⣧⣤⢀⣂⡀⠄⢸⣿⣿
-    ⣿⣿⣿⡇⠄⠘⢢⣿⣷⣼⣿⣿⣿⣮⣴⢃⣤⣿⣿⣿
-    ⣿⣿⡿⠄⣠⣄⣀⣙⣿⣿⣿⣿⣿⡿⠋⢸⡇⢹⣿⣿
-    ⣿⣿⡇⠰⣻⣿⣿⣿⠿⠮⠙⠿⠓⠛⠄⠄⠈⠄⢻⣿
-    ⣿⡟⠄⠄⠈⠙⠋⠄⠄⠄⠄⠁⠄⠄⠄⠄⠄⠄⢾⣿
-    ⡏⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢀⠄⠄⠄⠄⠄⠄⠈⣿
-    ⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-    """
-    )
+
+
+
+
+
+
+
+
+
+
+
+# Try each neural network, with each activation function * each loss combinatorially.
+def search_all_ensemble_strategy():
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
@@ -349,4 +479,4 @@ def search_all_world_lines():
 
 
 
-search_all_world_lines()
+search_all_ensemble_strategy()
