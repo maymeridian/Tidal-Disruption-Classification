@@ -21,7 +21,7 @@ def get_model(model_name, scale_pos_weight=1.0):
 
     if model_name == 'catboost':
         
-        # 1. DEFAULT PARAMS (Safe Fallback)
+        # 1. DEFAULT PARAMS
         params = {
             'iterations': 1000,
             'depth': 5,
@@ -73,9 +73,9 @@ def train_with_cv(model_name, X, y):
     # Check if we are using tuned params
     json_path = os.path.join(MODELS_DIR, 'best_params.json')
     if os.path.exists(json_path):
-        print("✓ Optimization active: Using tuned parameters.")
+        print("Using tuned parameters.")
     else:
-        print("⚠ Optimization inactive: Using default parameters.")
+        print("Using default parameters.")
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=MODEL_CONFIG['random_seed'])
     
@@ -87,7 +87,7 @@ def train_with_cv(model_name, X, y):
         X_train_fold, X_val_fold = X.iloc[train_index], X.iloc[val_index]
         y_train_fold, y_val_fold = y.iloc[train_index], y.iloc[val_index]
         
-        # CALCULATE WEIGHT 
+        # Calculate Weight 
         n_pos = y_train_fold.sum()
         n_neg = len(y_train_fold) - n_pos
         scale_weight = n_neg / n_pos if n_pos > 0 else 1.0
@@ -122,8 +122,7 @@ def train_with_cv(model_name, X, y):
     print(f"\n   Average CV F1: {avg_f1:.4f}")
     print(f"   Optimized Threshold: {avg_thresh:.2f}")
 
-    # FINAL PRODUCTION TRAINING
-    print("\n--- Training Final Production Model (100% Data) ---")
+    # 'Final' Model Training
     
     n_pos_all = y.sum()
     n_neg_all = len(y) - n_pos_all
