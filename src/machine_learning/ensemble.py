@@ -271,7 +271,7 @@ class LogitAdjustmentLoss(nn.Module):
         adjusted_logits 
 
 # label-distribution-aware margin loss
-class LDAMLoss(nn.module):
+class LDAMLoss(nn.Module):
     def __init__(self, cls_num_list, max_m=0.5, s=30):
         super.__init__()
         m_list = 1.0 / np.sqrt(np.sqrt(cls_num_list))
@@ -338,7 +338,6 @@ class FocalTverskyLoss(nn.Module):
         return torch.pow((1 - tversky), self.gamma)
 
 
-
 class ClassBalancedFocalLoss(nn.Module):
     def __init__(self, samples_per_cls, no_of_classes=2, beta=0.999, gamma=2.0):
         super.__init__()
@@ -349,7 +348,6 @@ class ClassBalancedFocalLoss(nn.Module):
         weights = (1.0 - beta) / np.array(effective_num)
         weights = weights / np.sum(weights) * no_of_classes
         self.weights = torch.tensor(weights).float()
-
 
     def forward(self, logits, targets):
         # need to manually apply weights to the Focal Loss
@@ -409,6 +407,16 @@ class SoftF1Loss(nn.Module):
         f1 = 2 * tp / (2 * tp + fp + fn + self.epsilon)
         return 1 - f1.mean()
 
+class WeightedBCELoss(nn.Module):
+    def __init__(self, pos_weight_value=1.0):
+        super().__init__()
+        self.pos_weight = torch.tensor([pos_weight_value])
+        self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+
+    def forward(self, logits, targets):
+        if self.pos_weight.device != logits.device:
+            self.criterion.pos_weight = self.pos_weight.to(logits.device)
+        return self.criterion(logits, targets.float())
 
 
 # factory function to use for training.
@@ -452,8 +460,9 @@ def get_loss_function(name, device, train_y=None):
         
     elif name == 'mcc':
         return MCCLoss()
+
     return None
-    
+
 # TabNet
 # FT-Transformer
 # CNN
