@@ -340,7 +340,7 @@ class FocalTverskyLoss(nn.Module):
 
 class ClassBalancedFocalLoss(nn.Module):
     def __init__(self, samples_per_cls, no_of_classes=2, beta=0.999, gamma=2.0):
-        super.__init__()
+        super().__init__()
         self.gamma = gamma
         # 
         # calculate effecive weights
@@ -369,7 +369,7 @@ class ClassBalancedFocalLoss(nn.Module):
 
 class MCCloss(nn.Module):
     def __init__():
-        super.__init__()
+        super().__init__()
     
     def forward(self, logits, targets):
         probs = torch.sigmoid(logits)
