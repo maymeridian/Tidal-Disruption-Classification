@@ -272,8 +272,28 @@ class LogitAdjustmentLoss(nn.Module):
 
 # label-distribution-aware margin loss
 class LDAMLoss(nn.module):
-    def __init__():
+    def __init__(self, cls_num_list, max_m=0.5, s=30):
         super.__init__()
+        m_list = 1.0 / np.sqrt(np.sqrt(cls_num_list))
+        m_list = m_list * (max_m / np.max(m_list))
+        m_list = torch.FloatTensor(m_list)
+        self.m_list = m_list
+        self.s = s
+        self.criterion = nn.CrossEntropyLoss()
+
+    def forward(self, logits, targets):
+        # logits (B, 2)
+        index = torch.zeros_like(logits, dtype=torch.uint8)
+        index.scatter_(1, targets.data.view(-1, 1).long(), 1)
+        index_float = index.type(torch.cuda.FloatTensor) if logits.is_cuda else index.type(torch.FloatTensor)
+
+        batch_m = torch.matmul(self.m_list[None, :].to(logits.device), index_float.transpose(0,1))
+        batch_m = batch_m.view((-1, 1))
+
+        x_m = logits = batch_m
+        output = torch.where(index.bool(), x_m, logits)
+        return self.criterion(self.s * output, targets.long())
+
 
 
 class TverskyLoss(nn.Module):
@@ -319,17 +339,57 @@ class FocalTverskyLoss(nn.Module):
 
 
 
-
-
-
 class ClassBalancedFocalLoss(nn.Module):
-    def __init__():
+    def __init__(self, samples_per_cls, no_of_classes=2, beta=0.999, gamma=2.0):
         super.__init__()
+        self.gamma = gamma
+        # 
+        # calculate effecive weights
+        effective_num = 1.0 - np.power(beta, samples_per_cls)
+        weights = (1.0 - beta) / np.array(effective_num)
+        weights = weights / np.sum(weights) * no_of_classes
+        self.weights = torch.tensor(weights).float()
+
+
+    def forward(self, logits, targets):
+        # need to manually apply weights to the Focal Loss
+        # logits: (B, 1) 
+        # calculate standard BCE
+        bce_loss = F.binary_cross_entropy_with_logits(logits, targets.float(), reduction='none')
+        
+        # calculate Pt
+        pt = torch.exp(-bce_loss)
+        
+        # get class weights for current batch
+        # assuming targets are 0/1
+        batch_weights = self.weights.to(targets.device)[targets.long()]
+        
+        # combine
+        cb_focal_loss = batch_weights * (1 - pt) ** self.gamma * bce_loss
+        return cb_focal_loss.mean()
 
 
 class MCCloss(nn.Module):
     def __init__():
         super.__init__()
+    
+    def forward(self, logits, targets):
+        probs = torch.sigmoid(logits)
+        targets = targets.float()
+
+        tp = (probs * targets).sum()
+        tn = ((1 - probs) * (1 - targets)).sum()
+        fp = (probs * (1 - targets)).sum()
+        fn = ((1 - probs) * targets).sum()
+
+        numerator = tp * tn - fp * fn
+        denominator = torch.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        
+        # add epsilon to avoid nan
+        mcc = numerator / (denominator + 1e-7)
+
+        # 1 - mcc so that minimizing loss maxes mcc
+        return  1 - mcc
 
 
 class SoftF1Loss(nn.Module):
@@ -351,6 +411,49 @@ class SoftF1Loss(nn.Module):
 
 
 
+# factory function to use for training.
+def get_loss_function(name, device, train_y=None):
+    if train_y is not None: 
+        neg_count = (train_y == 0).sum()
+        pos_count = (train_y == 1).sum()
+        counts = [neg_count, pos_count]
+    else: 
+        counts = [100, 100]
+    
+    if name == 'bce': 
+        return nn.BCEWithLogitsLoss()
+    elif name == 'weighted_bce': 
+        weight = counts[0] / counts[1]
+        return WeightedBCELoss(pos_weight_value=weight)
+    elif name == 'focal':
+        return FocalLoss(gamma=2.0, alpha=0.25)
+        
+    elif name == 'soft_f1':
+        return SoftF1Loss()
+        
+    elif name == 'tversky':
+        # Beta=0.7 favors Recall (catching TDEs)
+        return TverskyLoss(alpha=0.3, beta=0.7)
+        
+    elif name == 'focal_tversky':
+        return FocalTverskyLoss(gamma=1.5)
+        
+    elif name == 'logit_adj':
+        return LogitAdjustmentLoss(cls_num_list=counts)
+        
+    elif name == 'ldam':
+        return LDAMLoss(cls_num_list=counts)
+        
+    elif name == 'poly':
+        return PolyLoss(epsilon=1.0)
+        
+    elif name == 'cb_focal':
+        return ClassBalancedFocalLoss(samples_per_cls=counts)
+        
+    elif name == 'mcc':
+        return MCCLoss()
+    return None
+    
 # TabNet
 # FT-Transformer
 # CNN
