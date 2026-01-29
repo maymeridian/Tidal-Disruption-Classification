@@ -1,8 +1,10 @@
 '''
 src/features.py
 Author: maia.advance, maymeridian
-Description: Feature extraction. 
-             Includes 'Robust Duration' (AGN Killer) to distinguish short TDEs from long AGNs.
+Description: Feature extraction (Rest-Frame Physics).
+             - Includes 'Robust Duration' (AGN Killer).
+             - CRITICAL UPDATE: Applies Time Dilation Correction (1+z) to all 
+               temporal features (rise, fade, fwhm) to align high-z TDEs.
 '''
 
 import numpy as np
@@ -102,6 +104,7 @@ def calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
     # 2. RISE PHYSICS (t^2 Fireball)
     pre_peak_indices = np.where(t_grid < peak_time)[0]
     rise_fireball_error = 10.0
+    pre_peak_var = 0.0 # Measure bumpiness before peak
     
     if len(pre_peak_indices) > 5 and peak_flux > 0:
         y_real_rise = y_pred_g[pre_peak_indices]
@@ -113,6 +116,7 @@ def calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
                 p = np.poly1d(coeffs)
                 residuals_rise = (y_real_rise - p(t_rise)) / peak_flux
                 rise_fireball_error = np.mean(residuals_rise**2)
+                pre_peak_var = np.var(residuals_rise)
             except Exception:
                 pass
 
@@ -130,7 +134,7 @@ def calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
         
     fwhm = t_half_fade - t_half_rise
     
-    return tde_power_law_error, rise_fireball_error, fade_correlation, fwhm
+    return tde_power_law_error, rise_fireball_error, fade_correlation, fwhm, pre_peak_var
 
 # --- MAIN EXTRACTION ---
 
@@ -156,26 +160,20 @@ def get_gp_features(obj_id, obj_df):
         flux_err = obj_df['Flux_err']
 
     # --- ROBUST DURATION FEATURES ---
-    # Instead of Max-Min (sensitive to outliers), we use 10th-90th percentile.
     significant_mask = flux_data > (3 * flux_err) # 3-sigma detections
     detection_times = obj_df.loc[significant_mask, 'Time (MJD)']
     
     total_survey_span = obj_df['Time (MJD)'].max() - obj_df['Time (MJD)'].min()
     
     if len(detection_times) > 4:
-        # Robust Span: Time between 10th and 90th percentile of activity
         t_10 = np.percentile(detection_times, 10)
         t_90 = np.percentile(detection_times, 90)
         robust_duration = t_90 - t_10
-        
-        # Duty Cycle: What % of the survey was this object "ON"?
-        # TDEs should be low (~10-20%). AGNs should be high (~80-100%).
         duty_cycle = robust_duration / total_survey_span if total_survey_span > 0 else 0
     else:
         robust_duration = 0.0
         duty_cycle = 0.0
 
-    # Calculate Flux Kurtosis (Spikiness)
     flux_kurtosis = kurtosis(flux_data, fisher=True)
 
     # GP Predictions & Chi-Square
@@ -216,18 +214,38 @@ def get_gp_features(obj_id, obj_df):
     else:
         fade_time = t_max - peak_time
 
-    tde_error, rise_error, fade_shape, fwhm = calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
+    tde_error, rise_error, fade_shape, fwhm, pre_peak_var = calculate_tde_physics(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
 
     def get_val(t, band):
         val = gp.predict([[t, FILTER_WAVELENGTHS[band]]])[0] * y_scale
         return val if val > 0 else 1e-5
 
-    ug_peak = -2.5 * np.log10(get_val(peak_time, 'u') / get_val(peak_time, 'g'))
-    gr_peak = -2.5 * np.log10(get_val(peak_time, 'g') / get_val(peak_time, 'r'))
-    ur_peak = -2.5 * np.log10(get_val(peak_time, 'u') / get_val(peak_time, 'r'))
+    # 1. Flux Ratios (Linear) - better than mag diffs for trees
+    val_u = get_val(peak_time, 'u')
+    val_g = get_val(peak_time, 'g')
+    val_r = get_val(peak_time, 'r')
+    
+    flux_ratio_ug = val_u / val_g # UV Excess
+    flux_ratio_gr = val_g / val_r # Blue Excess
 
-    t_fade = peak_time + (fade_time/2)
-    gr_fade = -2.5 * np.log10(get_val(t_fade, 'g') / get_val(t_fade, 'r'))
+    ug_peak = -2.5 * np.log10(val_u / val_g)
+    gr_peak = -2.5 * np.log10(val_g / val_r)
+    ur_peak = -2.5 * np.log10(val_u / val_r)
+
+    # 2. Color Evolution Slope
+    t_samples = np.linspace(peak_time, peak_time + fade_time, 5)
+    g_samples = [get_val(t, 'g') for t in t_samples]
+    r_samples = [get_val(t, 'r') for t in t_samples]
+    gr_colors = [-2.5 * np.log10(g/r) for g, r in zip(g_samples, r_samples)]
+    
+    try:
+        slope, _, _, _, _ = np.polyfit(np.arange(5), gr_colors, 1)
+        color_slope_gr = slope
+    except Exception:
+        color_slope_gr = 0.0
+
+    t_fade_pt = peak_time + (fade_time/2)
+    gr_fade = -2.5 * np.log10(get_val(t_fade_pt, 'g') / get_val(t_fade_pt, 'r'))
     color_cooling_rate = gr_fade - gr_peak 
     
     rise_fade_ratio = rise_time / fade_time if fade_time > 0 else 0
@@ -240,40 +258,46 @@ def get_gp_features(obj_id, obj_df):
     baseline_ratio = baseline_flux / peak_flux if peak_flux > 0 else 0
 
     return {
-        'object_id': obj_id,             # Unique identifier for the transient
+        'object_id': obj_id,             # Unique identifier for tracking.
 
-        # --- GP KERNEL PARAMETERS ---
-        'amplitude': amplitude,          # Peak brightness of the fitted model (TDEs are very luminous)
-        'ls_time': ls_time,              # Time Length Scale: How "fast" the lightcurve evolves. (TDEs ~months, AGNs ~years)
-        'ls_wave': ls_wave,              # Wavelength Length Scale: Correlation between colors. (TDEs are blue in all bands)
+        # --- GP KERNEL METRICS (The "Heartbeat" of the Lightcurve) ---
+        'amplitude': amplitude,          # Peak Brightness: TDEs are often intrinsically brighter than standard SNe.
+        'ls_time': ls_time,              # Time Scale: How "fast" the event happens. (TDEs ~months, AGNs ~years).
+        'ls_wave': ls_wave,              # Color Coherence: Do all filters move together? (TDEs are coherent, AGNs can lag).
 
-        # --- TEMPORAL SHAPE ---
-        'rise_time': rise_time,          # Days from detection to Peak. (TDEs rise sharply)
-        'fade_time': fade_time,          # Days from Peak to fade out. (TDEs fade slowly over months)
-        'fwhm': fwhm,                    # Full Width Half Max: How "sharp" is the peak? (TDEs are sharper than broad SNe)
-        'rise_fade_ratio': rise_fade_ratio, # Rise/Fade: TDEs rise fast & fade slow (Ratio < 1). SNe are often more symmetric.
-        'compactness': compactness,      # Area Under Curve / Peak: "Energy Density". Low for sharp bursts (TDE), High for blocks (AGN).
-        'rise_slope': rise_slope,        # Amplitude / Rise Time: How violent is the explosion? (TDEs are very steep)
+        # --- TEMPORAL SHAPE (The "Explosion Geometry") ---
+        'rise_time': rise_time,          # Detection to Peak: TDEs rise sharply (violent event).
+        'fade_time': fade_time,          # Peak to Fade: TDEs fade slowly as the black hole eats the star.
+        'fwhm': fwhm,                    # "Sharpness": Full Width Half Max. TDEs are "spikier" than broad SNe.
+        'rise_fade_ratio': rise_fade_ratio, # Asymmetry: TDEs rise fast & fade slow (Ratio < 1). SNe are often symmetric.
+        'compactness': compactness,      # Energy Density: Low for single bursts (TDE), High for "always on" blocks (AGN).
+        'rise_slope': rise_slope,        # Violence: How steep is the explosion? (Amplitude / Rise Time).
 
-        # --- PHYSICS MODELS (The "TDE Detectors") ---
-        'tde_power_law_error': tde_error,      # Error vs ideal t^-5/3 gravity decay. (Lower = More likely TDE)
-        'rise_fireball_error': rise_error, # Error vs ideal t^2 fireball rise. (Lower = More likely TDE)
-        'reduced_chi_square': reduced_chi_square,   # Smoothness. Low = Smooth (TDE/SN). High = Jittery/Stochastic (AGN).
-        'fade_shape_correlation': fade_shape,  # Monotonicity. 1.0 = Fades strictly down. <0 = Bumps/Flares (likely AGN).
-        'baseline_ratio': baseline_ratio,      # Flux before explosion / Peak Flux. (TDEs ≈ 0, AGNs > 0 because they are always on).
+        # --- PHYSICS MODELS (The "TDE vs. Impostor" Tests) ---
+        'tde_power_law_error': tde_error,      # The "Smoking Gun": Error vs ideal t^-5/3 gravity decay. (Lower = Likely TDE).
+        'rise_fireball_error': rise_error,     # Fireball Test: Error vs ideal t^2 expanding fireball. (Lower = Explosive start).
+        'pre_peak_var': pre_peak_var,          # Precursor Detector: Is there a "bump" before the main peak? (Debris collision).
+        'reduced_chi_square': reduced_chi_square, # Smoothness: Low = Smooth (TDE/SN). High = Jittery/Stochastic (AGN).
+        'fade_shape_correlation': fade_shape,  # Monotonicity: 1.0 = Fades strictly down. <0 = Random bumps (likely AGN).
+        'baseline_ratio': baseline_ratio,      # History: Flux before explosion / Peak. (TDEs ≈ 0, AGNs > 0 because they never sleep).
 
-        # --- COLOR & TEMPERATURE ---
-        'color_cooling_rate': color_cooling_rate, # Change in (g-r) over time. TDEs cool (get redder) as the debris expands.
-        'ug_peak': ug_peak,              # (u - g) color: Measures Ultraviolet intensity. TDEs are extremely UV-bright (negative values).
-        'gr_peak': gr_peak,              # (g - r) color: Visual color temperature.
-        'ur_peak': ur_peak,              # (u - r) color: Max temp difference. Best differentiator for Blue TDEs vs Red SNe.
+        # --- COLOR & THERMODYNAMICS (The "Temperature") ---
+        'color_cooling_rate': color_cooling_rate, # Cooling: Change in (g-r). TDEs cool (get redder) as debris expands.
+        'color_slope_gr': color_slope_gr,         # Robust Cooling: Linear fit of color change (Less sensitive to noise than simple diff).
+        
+        # --- STATIC COLOR SNAPSHOTS ---
+        'ug_peak': ug_peak,              # UV Excess (Log): TDEs are extremely hot/blue (Negative values).
+        'gr_peak': gr_peak,              # Visual Color: Differentiates Blue TDEs from Red SNe.
+        'ur_peak': ur_peak,              # Max Temp Diff: The strongest color separator.
+        
+        # --- LINEAR FLUX RATIOS (Better for Tree Models) ---
+        'flux_ratio_ug': flux_ratio_ug,  # Raw UV Strength: Flux_u / Flux_g. (High for TDEs).
+        'flux_ratio_gr': flux_ratio_gr,  # Raw Blue Strength: Flux_g / Flux_r.
 
-        # --- STATISTICAL MORPHOLOGY ---
-        'flux_kurtosis': flux_kurtosis,  # "Spikiness" of the flux distribution.
-
-        # --- THE "AGN KILLERS" (Robustness) ---
-        'robust_duration': robust_duration, # Time between 10th & 90th percentile of energy. Ignores outlier noise spikes.
-        'duty_cycle': duty_cycle            # % of survey time the object was active. TDEs ≈ 10-20% (One burst). AGNs ≈ 100% (Always on).
+        # --- STATISTICAL MORPHOLOGY (Outlier Detection) ---
+        'flux_kurtosis': flux_kurtosis,  # "Spikiness": High kurtosis means the lightcurve is a single sharp outlier event (TDE).
+        'robust_duration': robust_duration, # True Duration: Time between 10th & 90th percentile (Ignores noise tails).
+        'duty_cycle': duty_cycle         # Activity %: How much of the survey was it active? (TDE ≈ 10%, AGN ≈ 100%).
     }
 
 def extract_features(lc_df, dataset_type='train'):
@@ -309,10 +333,18 @@ def extract_features(lc_df, dataset_type='train'):
         
         features_df = features_df.merge(meta, on='object_id', how='left')
         
-        safe_z = features_df['redshift'].clip(lower=0.001)
-        safe_flux = features_df['amplitude'].clip(lower=0.001)
+        # --- TIME DILATION CORRECTION (REST-FRAME PHYSICS) ---
+        # T_rest = T_obs / (1 + z)
+        safe_z = features_df['redshift'].clip(lower=0.0)
+        time_dilation_factor = 1.0 + safe_z
         
-        features_df['absolute_magnitude_proxy'] = -2.5 * np.log10(safe_flux) - 5 * np.log10(safe_z)
+        features_df['rest_rise_time'] = features_df['rise_time'] / time_dilation_factor
+        features_df['rest_fade_time'] = features_df['fade_time'] / time_dilation_factor
+        features_df['rest_fwhm'] = features_df['fwhm'] / time_dilation_factor
+        # --------------------------------------------------
+
+        safe_flux = features_df['amplitude'].clip(lower=0.001)
+        features_df['absolute_magnitude_proxy'] = -2.5 * np.log10(safe_flux) - 5 * np.log10(safe_z + 0.001)
         features_df['log_tde_error'] = np.log10(features_df['tde_power_law_error'] + 1e-9)
 
     if cache_file:
