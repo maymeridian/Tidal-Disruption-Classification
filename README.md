@@ -36,6 +36,7 @@ Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 *We ran into issues with catboost not working on Python 3.14.*
 
 
+
 ### Running the Pipeline
 
 The pipeline is controlled via main.py using command-line arguments.
@@ -72,18 +73,18 @@ From this GP model, we extract features across three domains:
 
     Thermodynamics & Color: Based on recent literature (Bhardwaj et al., 2025), we extract pre-peak and post-peak color gradients. Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot (blue) blackbody temperatures. We quantify this using g−r color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
 
-2. Machine Learning Architecture
+## Machine Learning Architecture
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction is a weighted average of three distinct architectural components:
 
-    Base Learner (Gradient Boosting): A CatBoost model trained on the full feature set to capture complex, non-linear interactions (48% weight).
+    A *Base Learner* : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set. (48% weight).
 
-    Domain Experts: Specialized CatBoost models restricted to specific feature subsets (e.g., only Morphology or only Physics). This prevents the model from overfitting to noise when physical signals are weak (32% weight).
+    2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets (One for 'Morphology' and one for 'Physics' characteristics). This prevents any one model from overfitting to noise when meaningful signals are too weak (32% weight).
 
     Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the correct manifold in feature space but might be missed by decision boundaries (20% weight).
 
-Technical Details
-Algorithms & Implementation
+## Technical Details
+### Algorithms & Implementation
 
 The classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. It integrates:
 
@@ -91,7 +92,7 @@ The classification engine is a custom EnsembleClassifier implemented in src/mach
 
     Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for scaling and imputation.
 
-Physics-Informed Feature Engineering
+### Physics-Informed Feature Engineering
 
 Features are strictly defined to capture physical properties rather than arbitrary statistical moments.
 
