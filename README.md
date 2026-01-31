@@ -1,9 +1,9 @@
 # Photometric Classification of Tidal Disruption Events for LSST
 
-## Abstract
-This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of Space and Time) data stream. TDEs are rare, high-energy transients occurring when a star is disrupted by a supermassive black hole. Distinguishing them from the vast background of supernovae and active galactic nuclei (AGN) requires a classification strategy that leverages specific astrophysical signatures—namely, their unique color evolution, thermal stability, and power-law decay rates.
+## Introduction
+This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of Space and Time) data stream. TDEs are rare, high-energy transients occurring when a star is disrupted by a supermassive black hole. Distinguishing them from the vast background of supernovae and active galactic nuclei (AGN) requires a classification strategy that leverages specific astrophysical signatures- namely, their unique color evolution, thermal stability, and power-law decay rate.
 
-Our approach utilizes a hybrid "Expert Mixture" ensemble that combines gradient boosting (CatBoost) with non-linear support models (Neural Networks and K-Nearest Neighbors), achieving high precision by grounding the classifier in rest-frame physics.
+Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradient boosting (CatBoost) with non-linear support models (MLP and K-Nearest Neighbors), achieving high precision.
 
 ---
 
@@ -41,8 +41,8 @@ Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
 The pipeline is controlled via main.py using command-line arguments.
 
-*--Train* : Train the Model: This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
-Bash
+*--Train* : Train the Model: This will load the training data, extract features (if not cached), perform stratified cross-validation, 
+            and save the final production model to the models/ directory.
 
     `python main.py --train`
 
@@ -63,15 +63,24 @@ To run the full pipeline with its current configuration, use:
 ## Methodology
 1. Feature Extraction Strategy
 
-We employ a feature-based classification approach rather than operating on raw flux points. Because LSST light curves are sparse and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light curve in both time and wavelength, providing a continuous representation of the event.
+We use feature-based classification approach rather than operating on the raw provided data. Because LSST light curves are sparse and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light curve in both time and wavelength, providing a rich representation that is more effective for model learning.
 
 From this GP model, we extract features across three domains:
 
-    Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM) to characterize the explosion's geometry, specifically targeting the "fast rise, slow decay" asymmetry typical of TDEs.
+    Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM)
+    to characterize the event's geometry, specifically targeting the "fast rise, slow decay"   
+    which seems typical of TDEs.
 
-    Astrophysical Physics: We fit the light curve residuals against known physical models, including the standard TDE power-law decay (L∝t−5/3) and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
+    Physics: We fit the light curve residuals against known physical models, 
+    the standard TDE power-law decay (L∝t−5/3) and the "fireball" rise model (L∝t2).
+    The quality of these fits (Chi-Squared error) serves as a primary discriminator.
 
-    Thermodynamics & Color: Based on recent literature (Bhardwaj et al., 2025), we extract pre-peak and post-peak color gradients. Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot (blue) blackbody temperatures. We quantify this using g−r color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
+    Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. 
+    Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot 
+    blackbody temperatures. We quantify this using g−r color stability and the 
+    "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
+    
+*(Bhardwaj et al., 2025)
 
 ## Machine Learning Architecture
 
