@@ -1,9 +1,13 @@
 ## Photometric Classification of Tidal Disruption Events for LSST
 
 ### Introduction
-This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of Space and Time) data stream. TDEs are rare, high-energy transients occurring when a star is disrupted by a supermassive black hole. Distinguishing them from the vast background of supernovae and active galactic nuclei (AGN) requires a classification strategy that leverages specific astrophysical signatures- namely, their unique color evolution, thermal stability, and power-law decay rate.
+This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of 
+Space and Time) data stream. TDEs are rare, high-energy transients occurring when a star is disrupted by a supermassive black hole. 
+Distinguishing them from the vast background of supernovae and active galactic nuclei (AGN) requires a classification strategy that 
+leverages specific astrophysical signatures- namely, their unique color evolution, thermal stability, and power-law decay rate.
 
-Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradient boosting (CatBoost) with non-linear support models (MLP and K-Nearest Neighbors), achieving high precision.
+Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradient boosting (CatBoost) with non-linear support models 
+(MLP and K-Nearest Neighbors), achieving high precision.
 
 ---
 ### Repository Structure
@@ -62,45 +66,38 @@ To run the full pipeline with its current configuration, use:
 
 ### Methodology
 
-We use a feature-based classification approach rather than operating on the just the  provided data. Because LSST light 
-curves are sparse and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). 
-This GP allows us to interpolate the light curve in both time and wavelength, providing a representation that is 
-more effective for model learning.
+We use a feature-based classification approach rather than operating on the just the  provided data. Because LSST light curves are sparse 
+and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light 
+curve in both time and wavelength, providing a representation that is more effective for model learning.
 
 From this model, we have 3 main components:
 
-    Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM)
-    to characterize the event's geometry, specifically targeting the "fast rise, slow decay"   
-    which seems typical of TDEs.
+    Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM) to characterize the event's 
+    geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
 
-    Physics: We fit the light curve residuals against known physical models, 
-    the standard TDE power-law decay (L∝t−5/3) and the "fireball" rise model (L∝t2).
-    The quality of these fits (Chi-Squared error) serves as a primary discriminator.
+    Physics: We fit the light curve residuals against known physical models, the standard TDE power-law decay (L∝t−5/3) 
+    and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
 
-    Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. 
-    Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot 
-    blackbody temperatures. We quantify this using g−r color stability and the 
-    "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
+    Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. Unlike supernovae
+    which cool rapidly (redden), TDEs typically maintain stable, hot blackbody temperatures. 
+    We quantify this using g−r color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
     
 _*(Bhardwaj et al., 2025)_
 
 ### Machine Learning Architecture
 
-We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. 
-The final prediction is a weighted average of three distinct architectural components:
+We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction 
+is a weighted average of three distinct architectural components:
 
-    (48%) A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on 
-    the full feature set.
+    (48%) A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set.
 
-    (32%) 2 Domain Experts: Specialized CatBoost models restricted to two specific 
-    feature subsets (One for 'Morphology' and one for 'Physics' characteristics). 
-    This prevents any one model from overfitting to noise when meaningful 
-    signals are too weak (32% weight).
+    (32%) 2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets 
+    (One for 'Morphology' and one for 'Physics' characteristics). This prevents any one model from 
+    overfitting to noise when meaningful signals are too weak (32% weight).
 
-    (20%) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) 
-    and K-Nearest Neighbors classifier. These non-tree-based models help identify 
-    TDE candidates that lie on the correct manifold in feature space  but 
-    might be missed by decision boundaries.
+    (20%) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest 
+    Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the 
+    correct manifold in feature space but might be missed by decision boundaries.
 
 ### Technical Details
 #### Algorithms & Implementation
@@ -110,21 +107,19 @@ It integrates:
 
     CatBoost: Utilized for its robust handling of categorical data and superior performance on tabular physics data.
 
-    Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure 
-    for scaling and imputation.
+    Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
+    scaling and imputation.
 
 #### Physics-Informed Feature Engineering
 
 Redshift correction and how we handle uncertainties from Flux are imporant for our GP dataset.
 
-    Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM)
-    are corrected for time dilation (trest​=tobs​/(1+z)). Redshift is also 
-    used to derive absolute magnitude proxies.
+    Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation
+    (trest​=tobs​/(1+z)). Redshift is also used to derive absolute magnitude proxies.
 
-    Uncertainty Handling: Flux uncertainties are incorporated directly into
-    the Gaussian Process Kernel (Matern 3/2). The noise level (α) of the GP 
-    is set to the square of the normalized flux error, which ensurs that 
-    noisy data points have minimal influence on the derived features.
+    Uncertainty Handling: Flux uncertainties are incorporated directly intothe Gaussian Process Kernel (Matern 3/2). 
+    The noise level (α) of the GP is set to the square of the normalized flux error, which ensures that noisy data 
+    points have minimal influence on the derived features.
 
 #### Feature Importance
 
@@ -147,8 +142,8 @@ Class imbalance is managed by:
     
     Stratified Cross-Validation: Ensuring representative distributions of TDEs in every training fold.
 
-    Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold
-    (Nnegative​/Npositive​) to penalize false negatives.
+    Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold (Nnegative​/Npositive​)
+    to penalize false negatives.
 
 ### References
     Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
