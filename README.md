@@ -94,7 +94,7 @@ We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robus
     This prevents any one model from overfitting to noise when meaningful 
     signals are too weak (32% weight).
 
-    (%20) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) 
+    (20%) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) 
     and K-Nearest Neighbors classifier. These non-tree-based models help identify 
     TDE candidates that lie on the correct manifold in feature space  but 
     might be missed by decision boundaries.
