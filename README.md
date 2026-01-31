@@ -66,93 +66,69 @@ To run the full pipeline with its current configuration, use:
 ---
 ## Methodology
 
-We use a feature-based classification approach rather than operating on the just the  provided data. Because LSST light curves are sparse 
-and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light 
-curve in both time and wavelength, providing a representation that is more effective for model learning.
+We use a feature-based classification approach rather than operating on just the provided data. Because LSST light curves are sparse and irregularly sampled, we first model every object using a **2-Dimensional Gaussian Process (GP)**. This GP allows us to interpolate the light curve in both time and wavelength, providing a representation that is more effective for model learning.
 
-From this model, we have 3 main components:
+From this model, we extract three main components:
 
-    Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM) to characterize the event's 
-    geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
+* **Temporal Morphology:** We calculate Rise Time, Fade Time, and Full-Width Half-Max (FWHM) to characterize the event's geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
+* **Physics:** We fit the light curve residuals against known physical models, specifically the standard TDE power-law decay ($L \propto t^{-5/3}$) and the "fireball" rise model ($L \propto t^2$). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
+* **Thermodynamics & Color:** We extract pre-peak and post-peak* color gradients. Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot blackbody temperatures. We quantify this using $g-r$ color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
 
-    Physics: We fit the light curve rThe classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. 
-    It integrates:
-
-CatBoost: Utilized for its robust handling of categorical data and superior performance on tabulesiduals against known physical models, 
-the standard TDE power-law decay (L∝t−5/3) and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as 
-a primary discriminator.
-
-    Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. Unlike supernovae
-    which cool rapidly (redden), TDEs typically maintain stable, hot blackbody temperatures. 
-    We quantify this using g−r color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
-    
 _*(Bhardwaj et al., 2025)_
 
 
 ## Machine Learning Model Overview
 
-We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction 
-is a weighted average of three distinct architectural components:
+We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction is a weighted average of three distinct architectural components:
 
-    (48%) A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set.
+* **Base Learner (48%):** A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set.
+* **Domain Experts (32%):** Two specialized CatBoost models restricted to specific feature subsets (one for "Morphology" and one for "Physics" characteristics). This prevents any one model from overfitting to noise when meaningful signals are too weak.
+* **Manifold Support (20%):** A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the correct manifold in feature space but might be missed by decision boundaries.
 
-    (32%) 2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets 
-    (One for 'Morphology' and one for 'Physics' characteristics). This prevents any one model from 
-    overfitting to noise when meaningful signals are too weak (32% weight).
-
-    (20%) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest 
-    Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the 
-    correct manifold in feature space but might be missed by decision boundaries.
 ---
 ## Implementation Details
 
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
-    CatBoost: Utilized for its robust handling of categorical data and superior performance on tabular physics data.
+CatBoost: Utilized for its robust handling of categorical data and superior performance on tabular physics data.
 
-    Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
-    scaling and imputation.
+Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
+scaling and imputation.
 
 ### Physics-Informed Feature Engineering
 
-Redshift correction and how we handle uncertainties from Flux are imporant for our GP dataset.
+Redshift correction and flux uncertainty handling are crucial for our GP dataset.
 
-    Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation
-    $t_{rest} = \frac{t_{obs}}{1+z}$. Redshift is also used to derive absolute magnitude proxies.
-
-    Uncertainty Handling: Flux uncertainties are incorporated directly intothe Gaussian Process Kernel (Matern 3/2). 
-    The noise level (α) of the GP is set to the square of the normalized flux error, which ensures that noisy data 
-    points have minimal influence on the derived features.
+* **Redshift Correction:** All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation ($$t_{\text{rest}} = t_{\text{obs}} / (1+z)$$). Redshift is also used to derive absolute magnitude proxies.
+* **Uncertainty Handling:** Flux uncertainties are incorporated directly into the Gaussian Process Kernel (Matern 3/2). The noise level ($\alpha$) of the GP is set to the square of the normalized flux error, ensuring that noisy data points have minimal influence on derived features.
 
 ### Feature Importance
 
-The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, 
-Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
-Rank    Feature    Description
-1    template_chisq_tde    Goodness-of-fit against a normalized TDE shape template.
-2    negative_flux_fraction    Robust noise metric, distinguishes real transients from artifacts.
-3    duty_cycle    Percentage of survey time the object was active (distinguishes AGN).
-4    tde_power_law_error    Raw error of the t−5/3 power law fit.
-5    log_tde_error    Log-space error of the t−5/3 power law fit.
-6    robust_duration    Time span between 10th and 90th flux percentiles.
-7    percentile_ratio_80_max    Shape metric identifying "plateaus" vs. "peaks".
-8    ls_wave    Gaussian Process spectral coherence length scale.
-9    total_radiated_energy    Integrated bolometric luminosity proxy.
-10   compactness    Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes).
+The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
+
+| Rank | Feature | Description |
+| :--- | :--- | :--- |
+| 1 | `template_chisq_tde` | Goodness-of-fit against a normalized TDE shape template. |
+| 2 | `negative_flux_fraction` | Robust noise metric, distinguishes real transients from artifacts. |
+| 3 | `duty_cycle` | Percentage of survey time the object was active (distinguishes AGN). |
+| 4 | `tde_power_law_error` | Raw error of the $t^{-5/3}$ power law fit. |
+| 5 | `log_tde_error` | Log-space error of the $t^{-5/3}$ power law fit. |
+| 6 | `robust_duration` | Time span between 10th and 90th flux percentiles. |
+| 7 | `percentile_ratio_80_max` | Shape metric identifying "plateaus" vs. "peaks". |
+| 8 | `ls_wave` | Gaussian Process spectral coherence length scale. |
+| 9 | `total_radiated_energy` | Integrated bolometric luminosity proxy. |
+| 10 | `compactness` | Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes). |
 
 ### Handling Imbalance
 
-Class imbalance is managed by:
-    
-    Stratified Cross-Validation: Ensuring representative distributions of TDEs in every training fold.
+* **Stratified Cross-Validation:** Ensuring representative distributions of TDEs in every training fold.
+* **Dynamic Class Weighting:** The `scale_pos_weight` parameter is calculated dynamically for each fold ($N_{negative} / N_{positive}$) to penalize false negatives.
 
-    Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold (Nnegative​/Npositive​)
-    to penalize false negatives.
 ---
+
 ## References
-    Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
 
-    van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. Space Science Reviews.
-
-    Gezari, S. (2021). Tidal Disruption Events. Annual Review of Astronomy and Astrophysics.
+* Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. *Astronomy & Astrophysics*.
+* van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. *Space Science Reviews*.
+* Gezari, S. (2021). Tidal Disruption Events. *Annual Review of Astronomy and Astrophysics*.
