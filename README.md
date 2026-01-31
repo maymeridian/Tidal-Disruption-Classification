@@ -29,32 +29,32 @@ Our approach utilizes a hybrid "Expert Mixture" ensemble that combines gradient 
 ## Installation & Usage
 Prerequisites
 
-Requires Python 3.12x-3.13x to be installed. Install the required dependencies:
+Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
     `pip install -r requirements.txt`
 
-*we ran into issues with catboost not working on the Python 3.14.*
+*We ran into issues with catboost not working on Python 3.14.*
 
 
 ### Running the Pipeline
 
 The pipeline is controlled via main.py using command-line arguments.
 
-*--Train* Train the Model This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
+*--Train* : **Train the Model**: This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
 Bash
 
     `python main.py --train`
 
-*--predict* Generate Predictions: This loads the trained model from models/ and generates a submission file for the test set in results/.
+*--predict* : Generate Predictions: This loads the trained model from models/ and generates a submission file for the test set in results/.
 
 
     `python main.py --predict`
 
-*--tune* Tune the hyperparameters that are used in training the model, runs tune.py from main.py.
+*--tune* : Tune the hyperparameters: Performs trials in optimizing parameters that are used in training the model, runs tune.py from main.py.
 
     `python main.py --tune`
 
-To run the full pipeline sequentially:
+To run the full pipeline with its current configuration, use:
 
     `python main.py --train --predict`
 
