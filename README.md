@@ -149,7 +149,7 @@ Class imbalance is managed by:
 
     Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold (Nnegative​/Npositive​)
     to penalize false negatives.
-
+---
 ## References
     Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
 
