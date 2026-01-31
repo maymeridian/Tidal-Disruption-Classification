@@ -86,15 +86,15 @@ From this GP model, we extract features across three domains:
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction is a weighted average of three distinct architectural components:
 
-    A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set. (48% weight).
+    (48%) A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set.
 
-    2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets 
+    (32%) 2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets 
     (One for 'Morphology' and one for 'Physics' characteristics). This prevents any one model 
     from overfitting to noise when meaningful signals are too weak (32% weight).
 
-    Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. 
+    (%20) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. 
     These non-tree-based models help identify TDE candidates that lie on the correct manifold in feature space 
-    but might be missed by decision boundaries (20% weight).
+    but might be missed by decision boundaries.
 
 ## Technical Details
 ### Algorithms & Implementation
