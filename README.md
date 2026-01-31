@@ -6,7 +6,6 @@ This repository contains a machine learning pipeline designed to identify Tidal 
 Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradient boosting (CatBoost) with non-linear support models (MLP and K-Nearest Neighbors), achieving high precision.
 
 ---
-
 ### Repository Structure
 
 ```text
@@ -26,8 +25,9 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
         ├── tune.py             # Hyperparameter optimization scripts
         └── experimental.py     # Experimental architectures (not used in final model)
 ```
+---
+
 ### Installation & Usage
-Prerequisites
 
 Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
