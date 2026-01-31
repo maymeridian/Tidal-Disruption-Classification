@@ -77,7 +77,7 @@ From this GP model, we extract features across three domains:
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction is a weighted average of three distinct architectural components:
 
-    A *Base Learner* : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set. (48% weight).
+    A Base Learner : A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set. (48% weight).
 
     2 Domain Experts: Specialized CatBoost models restricted to two specific feature subsets (One for 'Morphology' and one for 'Physics' characteristics). This prevents any one model from overfitting to noise when meaningful signals are too weak (32% weight).
 
@@ -100,12 +100,12 @@ Features are strictly defined to capture physical properties rather than arbitra
 
     Uncertainty Handling: Flux uncertainties are incorporated directly into the Gaussian Process Kernel (Matern 3/2). The noise level (α) of the GP is set to the square of the normalized flux error, ensuring that noisy data points have minimal influence on the derived features.
 
-Feature Importance
+### Feature Importance
 
-The table below lists the most discriminative features in the final classifier. The dominance of physics-based metrics (Template Matching, Power Law Error) over simple shape metrics confirms the model is learning the physical signature of tidal disruption.
+The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
 Rank    Feature    Description
 1    template_chisq_tde    Goodness-of-fit against a normalized TDE shape template.
-2    negative_flux_fraction    Robust noise metric; distinguishes real transients from artifacts.
+2    negative_flux_fraction    Robust noise metric, distinguishes real transients from artifacts.
 3    duty_cycle    Percentage of survey time the object was active (distinguishes AGN).
 4    tde_power_law_error    Raw error of the t−5/3 power law fit.
 5    log_tde_error    Log-space error of the t−5/3 power law fit.
@@ -113,15 +113,17 @@ Rank    Feature    Description
 7    percentile_ratio_80_max    Shape metric identifying "plateaus" vs. "peaks".
 8    ls_wave    Gaussian Process spectral coherence length scale.
 9    total_radiated_energy    Integrated bolometric luminosity proxy.
-10 compactness    Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes).
-Handling Imbalance
+10   compactness    Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes).
 
-Class imbalance is managed via:
+### Handling Imbalance
+
+Class imbalance is managed by:
+    
     Stratified Cross-Validation: Ensuring representative distributions of TDEs in every training fold.
 
     Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold (Nnegative​/Npositive​) to penalize false negatives.
 
-References
+### References
     Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
 
     van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. Space Science Reviews.
