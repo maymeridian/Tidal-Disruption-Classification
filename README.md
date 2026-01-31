@@ -31,7 +31,7 @@ Prerequisites
 
 Requires Python 3.12x-3.13x to be installed. Install the required dependencies:
 
-    ```pip install -r requirements.txt```
+    `pip install -r requirements.txt`
 
 *we ran into issues with catboost not working on the Python 3.14.*
 
@@ -40,20 +40,23 @@ Requires Python 3.12x-3.13x to be installed. Install the required dependencies:
 
 The pipeline is controlled via main.py using command-line arguments.
 
-*--Train* the Model This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
+*--Train* Train the Model This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
 Bash
 
     `python main.py --train`
 
-*--predict* Generate Predictions This loads the trained model from models/ and generates a submission file for the test set in results/.
-Bash
+*--predict* Generate Predictions: This loads the trained model from models/ and generates a submission file for the test set in results/.
+
 
     `python main.py --predict`
 
-3. End-to-End Execution To run the full pipeline sequentially:
-Bash
+*--tune* Tune the hyperparameters that are used in training the model, runs tune.py from main.py.
 
-python main.py --train --predict
+    `python main.py --tune`
+
+To run the full pipeline sequentially:
+
+    `python main.py --train --predict`
 
 Methodology
 1. Feature Extraction Strategy
