@@ -63,7 +63,7 @@ To run the full pipeline with its current configuration, use:
 
     `python main.py --train --predict`
 
-
+---
 ## Methodology
 
 We use a feature-based classification approach rather than operating on the just the  provided data. Because LSST light curves are sparse 
@@ -75,10 +75,12 @@ From this model, we have 3 main components:
     Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM) to characterize the event's 
     geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
 
-    Physics: We fit the light curve rThe classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. It integrates:
+    Physics: We fit the light curve rThe classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. 
+    It integrates:
 
-CatBoost: Utilized for its robust handling of categorical data and superior performance on tabulesiduals against known physical models, the standard TDE power-law decay (L∝t−5/3) 
-    and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
+CatBoost: Utilized for its robust handling of categorical data and superior performance on tabulesiduals against known physical models, 
+the standard TDE power-law decay (L∝t−5/3) and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as 
+a primary discriminator.
 
     Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. Unlike supernovae
     which cool rapidly (redden), TDEs typically maintain stable, hot blackbody temperatures. 
@@ -86,7 +88,8 @@ CatBoost: Utilized for its robust handling of categorical data and superior perf
     
 _*(Bhardwaj et al., 2025)_
 
-## Machine Learning Architecture
+
+## Machine Learning Model Overview
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction 
 is a weighted average of three distinct architectural components:
@@ -100,11 +103,10 @@ is a weighted average of three distinct architectural components:
     (20%) Manifold Support (MLP & KNN): A Multi-Layer Perceptron (Neural Network) and K-Nearest 
     Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the 
     correct manifold in feature space but might be missed by decision boundaries.
+---
+## Implementation Details
 
-## Technical Details
-### Algorithms & Implementation
-
-The classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. 
+The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
     CatBoost: Utilized for its robust handling of categorical data and superior performance on tabular physics data.
@@ -125,7 +127,8 @@ Redshift correction and how we handle uncertainties from Flux are imporant for o
 
 ### Feature Importance
 
-The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
+The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, 
+Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
 Rank    Feature    Description
 1    template_chisq_tde    Goodness-of-fit against a normalized TDE shape template.
 2    negative_flux_fraction    Robust noise metric, distinguishes real transients from artifacts.
