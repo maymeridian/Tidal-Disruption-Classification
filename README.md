@@ -31,7 +31,7 @@ Prerequisites
 
 Requires Python 3.12x-3.13x to be installed. Install the required dependencies:
 
-    `pip install -r requirements.txt`
+    ```pip install -r requirements.txt```
 
 *we ran into issues with catboost not working on the Python 3.14.*
 
