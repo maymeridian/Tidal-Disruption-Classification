@@ -13,12 +13,12 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
     """
     Loads raw lightcurve data. Automatically determines which log to use based on dataset_type.
     Uses caching to avoid re-stitching split files on every run.
-    
+
     Args:
         dataset_type (str): 'train' or 'test'.
         data_dir (str): Root data directory. Defaults to DATA_DIR from config.py.
     """
-    
+
     # 1. Construct the path for the optimized "All" file
     combined_filename = f"combined_curves/{dataset_type}_all_full_lightcurves.csv"
     combined_path = os.path.join(data_dir, combined_filename)
@@ -43,7 +43,7 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
         raise FileNotFoundError(f"Log file not found at {log_path}")
 
     log_df = pd.read_csv(log_path)
-    
+
     lightcurve_frames = []
     unique_splits = log_df['split'].unique()
 
@@ -58,7 +58,7 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
             lightcurve_frames.append(df_chunk)
         else:
             print(f"Warning: Chunk file not found {chunk_path}")
-    
+
     if not lightcurve_frames:
         raise FileNotFoundError(f"No lightcurve files were loaded from {data_dir}!")
 
@@ -72,50 +72,51 @@ def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
 
     return combined_df
 
+
 def get_prepared_dataset(dataset_type='train'):
     """
     Orchestrates the entire data loading pipeline for training.
-    
+
     1. Loads Raw Lightcurves (load_lightcurves)
     2. Extracts Features or Loads Cache (extract_features)
     3. Merges Target Labels from Log
-    
+
     Returns:
         X (pd.DataFrame): Feature matrix
         y (pd.Series): Target labels
     """
     if dataset_type == 'train':
         print("--- Preparing Training Dataset ---")
-        
+
         # 1. Load Lightcurves
         lc_df = load_lightcurves(dataset_type='train')
-        
+
         # 2. Get Features (Handles caching & de-extinction internally)
         # The dataset_type='train' argument tells it to look for PROCESSED_TRAINING_DATA_PATH
         features_df = extract_features(lc_df, dataset_type='train')
-        
+
         # 3. Merge Labels
         print("Merging Target Labels...")
         train_log = pd.read_csv(TRAIN_LOG_PATH)
-        
+
         # Inner merge ensures we only train on objects we actually have features for
         full_df = features_df.merge(train_log[['object_id', 'target']], on='object_id')
-        
+
         X = full_df.drop(columns=['object_id', 'target'])
         y = full_df['target']
-        
+
         return X, y
     elif dataset_type == 'test':
         print("--- Preparing Testing Dataset ---")
-        
+
         lc_df = load_lightcurves(dataset_type='test')
         features_df = extract_features(lc_df, dataset_type='test')
-        
+
         # Split Features (X) and IDs to identify predictions later
         X = features_df.drop(columns=['object_id'])
         ids = features_df['object_id']
-        
+
         return X, ids
 
-    else: 
-        return 
+    else:
+        return

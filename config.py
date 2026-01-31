@@ -52,11 +52,11 @@ SCORE_PATH = os.path.join(MODELS_DIR, 'latest_score.txt')
 
 # Effective wavelengths (Angstroms) for LSST filters
 FILTER_WAVELENGTHS = {
-    'u': 3641, 
-    'g': 4704, 
-    'r': 6155, 
-    'i': 7504, 
-    'z': 8695, 
+    'u': 3641,
+    'g': 4704,
+    'r': 6155,
+    'i': 7504,
+    'z': 8695,
     'y': 10056
 }
 

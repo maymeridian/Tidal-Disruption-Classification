@@ -9,8 +9,9 @@ import joblib
 from datetime import datetime
 
 from src.data_loader import get_prepared_dataset
-from src.machine_learning.model_factory import train_with_cv 
+from src.machine_learning.model_factory import train_with_cv
 from config import MODELS_DIR, MODEL_PATH, SCORE_PATH, MODEL_CONFIG
+
 
 def run_training(model_name=None):
     """
@@ -31,13 +32,20 @@ def run_training(model_name=None):
     print("\n--- Feature Importance (Top 10) ---")
     if hasattr(model, 'feature_importances_'):
         importance = model.feature_importances_
+
         if len(importance) == len(X_train.columns):
-            for name, imp in sorted(zip(X_train.columns, importance), key=lambda x: x[1], reverse=True)[:10]:
+            # Store the args
+            sort_args = {'key': lambda x: x[1], 'reverse': True}
+            data = zip(X_train.columns, importance)
+            top_features = sorted(data, **sort_args)[:10]
+
+            # Unpack them using **
+            for name, imp in top_features:
                 print(f"{name}: {imp:.4f}")
 
     # 4. Save Artifacts
     os.makedirs(MODELS_DIR, exist_ok=True)
-    
+
     # Save Model
     joblib.dump(model, MODEL_PATH)
     print(f"\nProduction model saved to {MODEL_PATH}")
