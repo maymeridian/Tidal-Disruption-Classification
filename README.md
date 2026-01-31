@@ -119,7 +119,7 @@ It integrates:
 Redshift correction and how we handle uncertainties from Flux are imporant for our GP dataset.
 
     Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation
-    (trest​=tobs​/(1+z)). Redshift is also used to derive absolute magnitude proxies.
+    $t_{rest} = \frac{t_{obs}}{1+z}$. Redshift is also used to derive absolute magnitude proxies.
 
     Uncertainty Handling: Flux uncertainties are incorporated directly intothe Gaussian Process Kernel (Matern 3/2). 
     The noise level (α) of the GP is set to the square of the normalized flux error, which ensures that noisy data 
