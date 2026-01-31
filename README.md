@@ -14,11 +14,12 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 
 ```text
 .
+├── datasets/                   # Directory for raw light curves and processed feature caches
+├── models/                     # Directory for saving trained models (.pkl) and thresholds
+├── results/                    # Output directory for prediction CSVs
+├── requirements.txt            # Required library installation (scikit-learn, extinction, catboost...)
 ├── config.py                   # Global configuration (paths, filter wavelengths, seeds)
 ├── main.py                     # Entry point for the pipeline CLI
-├── models/                     # Directory for saving trained models (.pkl) and thresholds
-├── datasets/                   # Directory for raw light curves and processed feature caches
-├── results/                    # Output directory for prediction CSVs
 └── src/
     ├── data_loader.py          # Data ingestion and preprocessing logic
     ├── features.py             # Feature extraction (Gaussian Processes, Physics fitting)
@@ -38,8 +39,6 @@ Requires Python 3.12-3.13 to be installed. Install the required dependencies:
     `pip install -r requirements.txt`
 
 *We ran into issues with catboost not working on Python 3.14.*
-
-
 
 ### Running the Pipeline
 
@@ -63,6 +62,9 @@ To run the full pipeline with its current configuration, use:
 
     `python main.py --train --predict`
 
+To run the hyperparameter tuning for a # of trials, use:
+    `python main.py --tune --trials #`
+
 ---
 ## Methodology
 
@@ -73,9 +75,6 @@ From this model, we extract three main components:
 * **Temporal Morphology:** We calculate Rise Time, Fade Time, and Full-Width Half-Max (FWHM) to characterize the event's geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
 * **Physics:** We fit the light curve residuals against known physical models, specifically the standard TDE power-law decay ($L \propto t^{-5/3}$) and the "fireball" rise model ($L \propto t^2$). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
 * **Thermodynamics & Color:** We extract pre-peak and post-peak* color gradients. Unlike supernovae which cool rapidly (redden), TDEs typically maintain stable, hot blackbody temperatures. We quantify this using $g-r$ color stability and the "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
-
-_*(Bhardwaj et al., 2025)_
-
 
 ## Machine Learning Model Overview
 
@@ -97,8 +96,6 @@ Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well
 scaling and imputation.
 
 ### Physics-Informed Feature Engineering
-
-Redshift correction and flux uncertainty handling are crucial for our GP dataset.
 
 * **Redshift Correction:** All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation ($$t_{\text{rest}} = t_{\text{obs}} / (1+z)$$). Redshift is also used to derive absolute magnitude proxies.
 * **Uncertainty Handling:** Flux uncertainties are incorporated directly into the Gaussian Process Kernel (Matern 3/2). The noise level ($\alpha$) of the GP is set to the square of the normalized flux error, ensuring that noisy data points have minimal influence on derived features.
