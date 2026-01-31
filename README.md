@@ -115,14 +115,16 @@ It integrates:
 
 #### Physics-Informed Feature Engineering
 
-Features are strictly defined to capture physical properties rather than arbitrary statistical moments.
+Redshift correction and how we handle uncertainties from Flux are imporant for our GP dataset.
 
-    Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation 
-    (trest​=tobs​/(1+z)). Redshift is also used to derive absolute magnitude proxies.
+    Redshift Correction: All temporal features (Rise Time, Fade Time, FWHM)
+    are corrected for time dilation (trest​=tobs​/(1+z)). Redshift is also 
+    used to derive absolute magnitude proxies.
 
-    Uncertainty Handling: Flux uncertainties are incorporated directly into the Gaussian Process Kernel (Matern 3/2). 
-    The noise level (α) of the GP is set to the square of the normalized flux error, ensuring that noisy data points 
-    have minimal influence on the derived features.
+    Uncertainty Handling: Flux uncertainties are incorporated directly into
+    the Gaussian Process Kernel (Matern 3/2). The noise level (α) of the GP 
+    is set to the square of the normalized flux error, which ensurs that 
+    noisy data points have minimal influence on the derived features.
 
 #### Feature Importance
 
