@@ -82,7 +82,7 @@ From this model, we have 3 main components:
     blackbody temperatures. We quantify this using g−r color stability and the 
     "Blue Energy Fraction" (ratio of UV/Blue flux to total flux).
     
-*(Bhardwaj et al., 2025)
+_*(Bhardwaj et al., 2025)_
 
 ### Machine Learning Architecture
 
