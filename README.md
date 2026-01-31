@@ -40,7 +40,7 @@ Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
 The pipeline is controlled via main.py using command-line arguments.
 
-*--Train* : **Train the Model**: This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
+*--Train* : Train the Model: This will load the training data, extract features (if not cached), perform stratified cross-validation, and save the final production model to the models/ directory.
 Bash
 
     `python main.py --train`
@@ -58,7 +58,8 @@ To run the full pipeline with its current configuration, use:
 
     `python main.py --train --predict`
 
-Methodology
+
+## Methodology
 1. Feature Extraction Strategy
 
 We employ a feature-based classification approach rather than operating on raw flux points. Because LSST light curves are sparse and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light curve in both time and wavelength, providing a continuous representation of the event.
