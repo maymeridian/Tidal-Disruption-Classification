@@ -1,6 +1,6 @@
-## Photometric Classification of Tidal Disruption Events for LSST
+# Photometric Classification of Tidal Disruption Events for LSST
 
-### Introduction
+## Introduction
 This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of 
 Space and Time) data stream. TDEs are rare, high-energy transients occurring when a star is disrupted by a supermassive black hole. 
 Distinguishing them from the vast background of supernovae and active galactic nuclei (AGN) requires a classification strategy that 
@@ -10,7 +10,7 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 (MLP and K-Nearest Neighbors), achieving high precision.
 
 ---
-### Repository Structure
+## Repository Structure
 
 ```text
 .
@@ -31,7 +31,7 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 ```
 ---
 
-### Installation & Usage
+## Installation & Usage
 
 Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
@@ -64,7 +64,7 @@ To run the full pipeline with its current configuration, use:
     `python main.py --train --predict`
 
 
-### Methodology
+## Methodology
 
 We use a feature-based classification approach rather than operating on the just the  provided data. Because LSST light curves are sparse 
 and irregularly sampled, we first model every object using a 2-Dimensional Gaussian Process (GP). This GP allows us to interpolate the light 
@@ -75,7 +75,9 @@ From this model, we have 3 main components:
     Temporal Morphology: We calculate rise time, fade time, and Full-Width Half-Max (FWHM) to characterize the event's 
     geometry, specifically targeting the "fast rise, slow decay" which seems typical of TDEs.
 
-    Physics: We fit the light curve residuals against known physical models, the standard TDE power-law decay (L∝t−5/3) 
+    Physics: We fit the light curve rThe classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. It integrates:
+
+CatBoost: Utilized for its robust handling of categorical data and superior performance on tabulesiduals against known physical models, the standard TDE power-law decay (L∝t−5/3) 
     and the "fireball" rise model (L∝t2). The quality of these fits (Chi-Squared error) serves as a primary discriminator.
 
     Thermodynamics & Color: We extract pre-peak and post-peak* color gradients. Unlike supernovae
@@ -84,7 +86,7 @@ From this model, we have 3 main components:
     
 _*(Bhardwaj et al., 2025)_
 
-### Machine Learning Architecture
+## Machine Learning Architecture
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction 
 is a weighted average of three distinct architectural components:
@@ -99,8 +101,8 @@ is a weighted average of three distinct architectural components:
     Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the 
     correct manifold in feature space but might be missed by decision boundaries.
 
-### Technical Details
-#### Algorithms & Implementation
+## Technical Details
+### Algorithms & Implementation
 
 The classification engine is a custom EnsembleClassifier implemented in src/machine_learning/model_factory.py. 
 It integrates:
@@ -110,7 +112,7 @@ It integrates:
     Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
     scaling and imputation.
 
-#### Physics-Informed Feature Engineering
+### Physics-Informed Feature Engineering
 
 Redshift correction and how we handle uncertainties from Flux are imporant for our GP dataset.
 
@@ -121,7 +123,7 @@ Redshift correction and how we handle uncertainties from Flux are imporant for o
     The noise level (α) of the GP is set to the square of the normalized flux error, which ensures that noisy data 
     points have minimal influence on the derived features.
 
-#### Feature Importance
+### Feature Importance
 
 The table below lists the most important features in the final classifier. The dominance of physics-based metrics (Template Matching, Power Law Error) over simple shape metrics shows the model is learning the physical signature of tidal disruption.
 Rank    Feature    Description
@@ -136,7 +138,7 @@ Rank    Feature    Description
 9    total_radiated_energy    Integrated bolometric luminosity proxy.
 10   compactness    Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes).
 
-#### Handling Imbalance
+### Handling Imbalance
 
 Class imbalance is managed by:
     
@@ -145,7 +147,7 @@ Class imbalance is managed by:
     Dynamic Class Weighting: The scale_pos_weight parameter is calculated dynamically for each fold (Nnegative​/Npositive​)
     to penalize false negatives.
 
-### References
+## References
     Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
 
     van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. Space Science Reviews.
