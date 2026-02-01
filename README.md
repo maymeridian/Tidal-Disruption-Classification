@@ -89,7 +89,7 @@ We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robus
 ---
 ## Implementation Details
 
-**Important Note on Reproducibility** :  When running this code it is important to note that the library we use for creating 
+__Important Note on Reproducibilit__ :  When running this code it is important to note that the library we use for creating 
 the gaussian process for feature extraction has a floating-point variation between CPU architectures. This, surprisingly, is 
 enough to have a noticable effect on the model performance between machines with different computers.
 (Because some of the values we are dealing with for the features we use are so small already.) 
