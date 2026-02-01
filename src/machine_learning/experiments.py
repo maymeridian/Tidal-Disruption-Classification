@@ -1,13 +1,4 @@
-'''
-src/machine_learning/experiments.py
-Author: maia.advance, maymeridian
-Description: Sandbox for various methods to be used compared with our existing model, 
-        we ran out of time before being able to figure out a better method than
-        { 3x Catboost models + MLP/KNN }
 
-        This file is not a part of the rest of the pipeline used elsewhere, and is just for model analysis.
-        in project directory, run with `python -m src.machine_learning.experiments`
-'''
 import pandas as pd
 import numpy as np
 import torch
