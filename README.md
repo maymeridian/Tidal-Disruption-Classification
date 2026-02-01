@@ -94,6 +94,7 @@ the gaussian process for feature extraction has a floating-point variation betwe
 enough to have a noticable effect on the model performance between machines with different computers.
 (Because some of the values we are dealing with for the features we use are so small already.) 
 The specific culprit is `sklearn.gaussian_process.GaussianProcessRegressor`. 
+<br>
 
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
