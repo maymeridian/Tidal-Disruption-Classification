@@ -11,6 +11,7 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 
 The version of our project that replicates our winning submission for this Kaggle Competition: 
 https://github.com/maymeridian/Tidal-Disruption-Classification/tree/competition_winner
+
 ---
 ## Repository Structure
 
