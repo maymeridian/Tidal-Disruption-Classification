@@ -89,6 +89,12 @@ We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robus
 ---
 ## Implementation Details
 
+**Important Note on Reproducibility** :  When running this code it is important to note that the library we use for creating 
+the gaussian process for feature extraction has a floating-point variation between CPU architectures. This, surprisingly, is 
+enough to have a noticable effect on the model performance between machines with different computers.
+(Because some of the values we are dealing with for the features we use are so small already.) 
+The specific culprit is `sklearn.gaussian_process.GaussianProcessRegressor`. 
+---
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
@@ -97,7 +103,7 @@ CatBoost: Utilized for its robust handling of categorical data and superior perf
 Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
 scaling and imputation.
 
-### Physics-Informed Feature Engineering
+### Physics-Based Feature Engineering
 
 * **Redshift Correction:** All temporal features (Rise Time, Fade Time, FWHM) are corrected for time dilation ($$t_{\text{rest}} = t_{\text{obs}} / (1+z)$$). Redshift is also used to derive absolute magnitude proxies.
 * **Uncertainty Handling:** Flux uncertainties are incorporated directly into the Gaussian Process Kernel (Matern 3/2). The noise level ($\alpha$) of the GP is set to the square of the normalized flux error, ensuring that noisy data points have minimal influence on derived features.
