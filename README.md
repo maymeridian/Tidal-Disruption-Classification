@@ -14,9 +14,11 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 
 ```text
 .
+├── archives/                   # Directory for final contest submission files
 ├── datasets/                   # Directory for raw light curves and processed feature caches
 ├── models/                     # Directory for saving trained models (.pkl) and thresholds
 ├── results/                    # Output directory for prediction CSVs
+├── output.txt                  # Terminal output from running train test commands
 ├── requirements.txt            # Required library installation (scikit-learn, extinction, catboost...)
 ├── config.py                   # Global configuration (paths, filter wavelengths, seeds)
 ├── main.py                     # Entry point for the pipeline CLI
