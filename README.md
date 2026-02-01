@@ -105,7 +105,7 @@ recreate that data using the gaussian process library.
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
-CatBoost: Utilized for its robust handling of categorical data and superior performance on tabular physics data.
+CatBoost: We found this to work best out of all the classifiers we tried. Since gradient boosted decision trees almost always seem to work better than neural networks below a certain size of dataset.
 
 Scikit-Learn: Provides the MLP (Neural Network) and KNN implementations, as well as the pipeline infrastructure for 
 scaling and imputation.
