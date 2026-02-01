@@ -17,9 +17,9 @@ from sklearn.metrics import f1_score
 from sklearn.base import BaseEstimator, ClassifierMixin
 from config import MODEL_CONFIG, MODELS_DIR
 
-# --- FEATURE SUBSETS ---
+# FEATURE SUBSETS
 
-# Subset 1: Morphology & Temporal Evolution Features
+# Subset of Morphology & Temporal Evolution Features
 MORPHOLOGY_FEATURES = [
     'rest_rise_time', 
     'rest_fade_time', 
@@ -35,7 +35,7 @@ MORPHOLOGY_FEATURES = [
     'amplitude'
 ]
 
-# Subset 2: Physics & Color Metrics
+# Subset of Physics & Color Metrics
 PHYSICS_FEATURES = [
     'tde_power_law_error', 
     'template_chisq_tde',
@@ -69,7 +69,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
     def fit(self, X, y):
         seed = MODEL_CONFIG['random_seed']
         
-        # --- GRADIENT BOOSTING PARAMETERS ---
+        # Gradient Boosting Parameters
         cb_params = {
             'iterations': 1000, 'depth': 5, 'learning_rate': 0.02,
             'l2_leaf_reg': 10, 'rsm': 0.5, 'loss_function': 'Logloss',
@@ -89,24 +89,24 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
             except Exception: 
                 pass
 
-        # 1. Base Model (CatBoost - All Features)
+        # Base Model : CatBoost
         self.models['base'] = CatBoostClassifier(**cb_params)
         self.models['base'].fit(X, y)
         self.feature_importances_ = self.models['base'].feature_importances_
 
-        # 2. Morphology Sub-Model (CatBoost - Shape Features)
+        # Morphology Specialist Model (CatBoost on only Shape Features)
         cols_morph = [c for c in MORPHOLOGY_FEATURES if c in X.columns]
         if cols_morph:
             self.models['morphology'] = CatBoostClassifier(**cb_params)
             self.models['morphology'].fit(X[cols_morph], y)
 
-        # 3. Physics Sub-Model (CatBoost - Physics Features)
+        # Physics Specialist (CatBoost on only Physics Features)
         cols_phys = [c for c in PHYSICS_FEATURES if c in X.columns]
         if cols_phys:
             self.models['physics'] = CatBoostClassifier(**cb_params)
             self.models['physics'].fit(X[cols_phys], y)
 
-        # 4. Support Model A: Multi-Layer Perceptron (Neural Network)
+        # Supporting Model A: Multi-Layer Perceptron (Neural Network)
         self.models['mlp'] = Pipeline([
             ('imputer', SimpleImputer(strategy='mean')),
             ('scaler', StandardScaler()),
@@ -116,7 +116,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         ])
         self.models['mlp'].fit(X, y)
 
-        # 5. Support Model B: K-Nearest Neighbors
+        # Supporting Model B: K-Nearest Neighbors
         self.models['knn'] = Pipeline([
             ('imputer', SimpleImputer(strategy='mean')),
             ('scaler', StandardScaler()),
@@ -127,7 +127,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     def predict_proba(self, X):
-        # 1. Generate Component Predictions
+        # Generate Component Predictions
         p_base = self.models['base'].predict_proba(X)[:, 1]
         
         p_morph = p_base # Fallback
@@ -143,10 +143,10 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         p_mlp = self.models['mlp'].predict_proba(X)[:, 1]
         p_knn = self.models['knn'].predict_proba(X)[:, 1]
         
-        # 2. Ensemble Aggregation (Weighted Average)
+        # Ensemble Aggregation (Weighted Average)
         # Weights logic: 
-        # - Gradient Boosting (80% Total): Split 60% Base, 20% Morph, 20% Phys
-        # - Support Models (20% Total): Split 50% MLP, 50% KNN
+        # - Gradient Boosting (80% Total): Split 48% Base, 16% Morph, 16% Phys
+        # - Support Models (20% Total): Split 10% MLP, 10% KNN
         
         final_prob = (0.48 * p_base) + \
                      (0.16 * p_morph) + \
@@ -160,7 +160,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         probs = self.predict_proba(X)[:, 1]
         return (probs >= 0.5).astype(int)
 
-# --- FACTORY ---
+# FACTORY
 def get_model(model_name, scale_pos_weight=1.0):
     if model_name == 'catboost':
         return EnsembleClassifier(scale_pos_weight=scale_pos_weight)
