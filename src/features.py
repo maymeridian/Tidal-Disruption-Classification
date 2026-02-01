@@ -81,7 +81,7 @@ def fit_2d_gp(obj_df):
     gp.fit(X, y_norm)
     return gp, y_scale
 
-# --- PHYSICS LOGIC ---
+# PHYSICS LOGIC
 
 def calculate_template_matching(t_grid, y_pred_g, peak_idx, peak_time, peak_flux):
     """Normalized TDE Shape Matching ONLY."""
@@ -252,7 +252,7 @@ def get_gp_features(obj_id, obj_df):
     else:
         fade_time = t_max - peak_time
 
-    # Calculate Physics
+    # calculate physics
     tde_error, linear_decay_slope, rise_error, fade_shape, fwhm, pre_peak_var = calculate_physics_wars(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
     match_tde = calculate_template_matching(t_grid, y_pred_g, peak_idx, peak_time, peak_flux)
 
@@ -271,7 +271,7 @@ def get_gp_features(obj_id, obj_df):
     gr_peak = -2.5 * np.log10(val_g / val_r)
     ur_peak = -2.5 * np.log10(val_u / val_r)
 
-    # --- COLOR FEATURES (FROM LITERATURE) ---
+    # COLOR FEATURES
     t_samples = np.linspace(peak_time, peak_time + fade_time, 5)
     g_samples = [get_val(t, 'g') for t in t_samples]
     r_samples = [get_val(t, 'r') for t in t_samples]
@@ -367,7 +367,7 @@ def extract_features(lc_df, dataset_type='train'):
     
     unique_ids = lc_clean['object_id'].unique()
     
-    print(f"Fitting 2D GPs on {len(unique_ids)} objects using ALL cores...")
+    print(f"Fitting 2D GPs on {len(unique_ids)} objects using all cores...")
     grouped_data = [group for _, group in lc_clean.groupby('object_id')]
     
     features_list = Parallel(n_jobs=-1, verbose=0)(
