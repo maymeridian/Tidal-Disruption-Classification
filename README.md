@@ -82,20 +82,23 @@ From this model, we extract three main components:
 
 We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robustness. The final prediction is a weighted average of three distinct architectural components:
 
-* **Base Learner (48%):** A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set.
-* **Domain Experts (32%):** Two specialized CatBoost models restricted to specific feature subsets (one for "Morphology" and one for "Physics" characteristics). This prevents any one model from overfitting to noise when meaningful signals are too weak.
-* **Manifold Support (20%):** A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the correct manifold in feature space but might be missed by decision boundaries.
+* (48%) **Base Learner :** A CatBoost (Gradient Boost Decision Tree) model trained on the full feature set. <br>
+* (32%) **Domain Experts :** Two specialized CatBoost models restricted to specific feature subsets (one for "Morphology"  and one for "Physics" characteristics). This prevents any one model from overfitting to noise when meaningful signals are too weak. <br>
+* (20%) **Manifold Support :** A Multi-Layer Perceptron (Neural Network) and K-Nearest Neighbors classifier. These non-tree-based models help identify TDE candidates that lie on the correct manifold in feature space but might be missed by decision boundaries.<br>
 
 ---
 ## Implementation Details
 
 __Important Note on Reproducibility__ :  When running this code it is important to note that the library we use for creating 
 the gaussian process for feature extraction has a floating-point variation between CPU architectures. This, surprisingly, is 
-enough to have a noticable effect on the model performance between machines with different computers.
-(Because some of the values we are dealing with for the features we use are so small already.) 
-The specific culprit is `sklearn.gaussian_process.GaussianProcessRegressor`. 
+enough to have a noticable effect on the model performance between computers with different CPUs.\
+(Because some of the values we are dealing with for the features we use are so small already.)\
+The specific culprit is `sklearn.gaussian_process.GaussianProcessRegressor`.\
 <br>
+In order to replicate our winning submission, you will need to use the existing processed data provided in `datasets/processed_(training/testing)_data.csv`, otherwise the output will likely not be the same since the program will have to 
+recreate that data using the gaussian process library.
 
+<br>
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
