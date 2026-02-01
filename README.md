@@ -1,5 +1,5 @@
 # Photometric Classification of Tidal Disruption Events for LSST
-Please Note that this is the version of the project that is responsible for our winning submission of the kaggle competition:(https://www.kaggle.com/competitions/mallorn-astronomical-classification-challenge)
+This is the version of the project that is responsible for our winning submission of the kaggle competition:(https://www.kaggle.com/competitions/mallorn-astronomical-classification-challenge)
 
 ## Introduction
 This repository contains a machine learning pipeline designed to identify Tidal Disruption Events (TDEs) within the LSST (Legacy Survey of 
