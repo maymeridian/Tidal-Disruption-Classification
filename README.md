@@ -16,7 +16,6 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
 
 ```text
 .
-├── archives/                   # Directory for final contest submission files
 ├── datasets/                   # Directory for raw light curves and processed feature caches
 ├── models/                     # Directory for saving trained models (.pkl) and thresholds
 ├── results/                    # Output directory for prediction CSVs
@@ -32,7 +31,7 @@ Our approach utilizes a hybrid "Mixture of Experts" ensemble that combines gradi
         ├── train.py            # Logic for cross-validation and model training
         ├── predict.py          # Logic for loading models and generating submissions
         ├── tune.py             # Hyperparameter optimization scripts
-        └── experimental.py     # Experimental architectures (not used in final model)
+        └── experiments.py      # Experimental architectures (not used in final model)
 ```
 ---
 
@@ -122,14 +121,14 @@ The table below lists the most important features in the final classifier. The d
 | :--- | :--- | :--- |
 | 1 | `template_chisq_tde` | Goodness-of-fit against a normalized TDE shape template. |
 | 2 | `negative_flux_fraction` | Robust noise metric, distinguishes real transients from artifacts. |
-| 3 | `duty_cycle` | Percentage of survey time the object was active (distinguishes AGN). |
+| 3 | `log_tde_error` | Log-space error of the $t^{-5/3}$ power law fit. |
 | 4 | `tde_power_law_error` | Raw error of the $t^{-5/3}$ power law fit. |
-| 5 | `log_tde_error` | Log-space error of the $t^{-5/3}$ power law fit. |
+| 5 | `duty_cycle` | Percentage of survey time the object was active (distinguishes AGN). |
 | 6 | `robust_duration` | Time span between 10th and 90th flux percentiles. |
 | 7 | `percentile_ratio_80_max` | Shape metric identifying "plateaus" vs. "peaks". |
 | 8 | `ls_wave` | Gaussian Process spectral coherence length scale. |
-| 9 | `total_radiated_energy` | Integrated bolometric luminosity proxy. |
-| 10 | `compactness` | Ratio of integrated flux area to peak flux (distinguishes blocky vs. peaked shapes). |
+| 9 | `std_color_gr` | Stability of color evolution (TDEs are more stable than SNe). |
+| 10 | `total_radiated_energy` | Integrated bolometric luminosity proxy. |
 
 ### Handling Imbalance
 
