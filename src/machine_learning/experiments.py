@@ -358,10 +358,10 @@ class LogitAdjustmentLoss(nn.Module):
         return self.criterion(adjusted_logits, targets.long())
 
 
-def get_loss_function(name, counts=[100, 100]):
+def get_loss_function(name, counts=[100, 100], pos_weight=None):
     name = name.lower()
     if name == 'bce':
-        return nn.BCEWithLogitsLoss()
+        return nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     if name == 'weighted_bce':
         return WeightedBCELoss(pos_weight_value=counts[0]/(counts[1]+1e-5))
     if name == 'focal':
@@ -1087,4 +1087,4 @@ if __name__ == "__main__":
 
     sub = exp.ensemble_and_submit(test_ids)
     sub.to_csv("../../results/experimental_test_submission.csv", index=False)
-    print("Submission saved to submission.csv")
+    print("Submission test file saved to results folder.")
