@@ -1061,22 +1061,22 @@ if __name__ == "__main__":
 
     exp = Experiment(X_train, y_train, X_val, y_val, X_test)
 
-    # catboost, our generalist model
+    # CatBoost <3
     exp.tune_catboost_optuna(n_trials=50)
 
-    # 2. xgboost
+    # XGBoost
     exp.tune_xgboost_optuna(n_trials=50)
 
-    # 3. lgbm
+    # 3. LGBM
     exp.tune_lgbm_optuna(n_trials=50)
 
-    # cnn
+    # CNN
     exp.tune_cnn_optuna(n_trials=50)
 
-    # kneighbors
+    # KNN
     exp.tune_knn_optuna(n_trials=50)
 
-    # adaboostregressor
+    # AdaBoost
     exp.tune_adaregressor_optuna(n_trials=50)
 
     # specialists
