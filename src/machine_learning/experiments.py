@@ -1000,7 +1000,7 @@ class Experiment:
         print(f"optimized F1: {current_best_score:.4f}")
         print(f"best Weights: {weights}")
 
-    def ensemble_and_submit(self, submission_ids):
+    def ensemble(self, submission_ids):
         print("\nbeginning ensembling strategy...")
 
         if not self.preds_test:
@@ -1025,8 +1025,7 @@ class Experiment:
 
         auc_score = roc_auc_score(self.y_val, final_val)
         print(f"------------------------------")
-        print(f"\nfull ensemble result: AUC= \
-               {auc_score:.4f}, best F1={best_f1:.4f} @ t={best_t:.3f}")
+        print(f"\nfull ensemble result: AUC= {auc_score:.4f}, best F1={best_f1:.4f} @ t={best_t:.3f}")
 
         submission = pd.DataFrame({
             'object_id': submission_ids,
@@ -1061,30 +1060,33 @@ if __name__ == "__main__":
 
     exp = Experiment(X_train, y_train, X_val, y_val, X_test)
 
-    # CatBoost <3
+    # catboost, our generalist model
     exp.tune_catboost_optuna(n_trials=50)
 
-    # XGBoost
+    # 2. xgboost
     exp.tune_xgboost_optuna(n_trials=50)
 
-    # 3. LGBM
+    # 3. lgbm
     exp.tune_lgbm_optuna(n_trials=50)
 
-    # CNN
+    # cnn
     exp.tune_cnn_optuna(n_trials=50)
 
-    # KNN
+    # kneighbors
     exp.tune_knn_optuna(n_trials=50)
 
-    # AdaBoost
+    # adaboostregressor
     exp.tune_adaregressor_optuna(n_trials=50)
 
     # specialists
     exp.train_specialists()
 
-    # calibration
+    # calibration and ensemble
     exp.apply_isotonic_calibration()
 
-    sub = exp.ensemble_and_submit(test_ids)
-    sub.to_csv("../../results/experimental_test_submission.csv", index=False)
+    exp.optimize_weights_hill_climbing()
+
+    sub = exp.ensemble(test_ids)
+
+    sub.to_csv("results/experimental_test_submission.csv", index=False)
     print("Submission test file saved to results folder.")
