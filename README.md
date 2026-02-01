@@ -89,12 +89,12 @@ We apply a Hybrid Ensemble Classifier designed to balance sensitivity with robus
 ---
 ## Implementation Details
 
-__Important Note on Reproducibilit__ :  When running this code it is important to note that the library we use for creating 
+__Important Note on Reproducibility__ :  When running this code it is important to note that the library we use for creating 
 the gaussian process for feature extraction has a floating-point variation between CPU architectures. This, surprisingly, is 
 enough to have a noticable effect on the model performance between machines with different computers.
 (Because some of the values we are dealing with for the features we use are so small already.) 
 The specific culprit is `sklearn.gaussian_process.GaussianProcessRegressor`. 
----
+
 The classification model is `EnsembleClassifier` implemented in src/machine_learning/model_factory.py. 
 It integrates:
 
