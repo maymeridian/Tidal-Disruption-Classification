@@ -887,7 +887,7 @@ class Experiment:
             print(f"{name} specialist AUC: \
                    {roc_auc_score(self.y_val, preds_val):.4f}")
 
-    # 5. apply isotonic regression
+    # apply isotonic regression
     def apply_isotonic_calibration(self):
         print("\napplying isotonic regression calibration...")
 
