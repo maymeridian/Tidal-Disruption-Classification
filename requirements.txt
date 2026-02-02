@@ -6,3 +6,7 @@ joblib
 matplotlib
 catboost
 optuna
+# technically the last 3 are optional since only used in experiments.py:
+torch
+lightgbm
+xgboost
