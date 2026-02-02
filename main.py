@@ -1,7 +1,7 @@
 '''
 main.py
 Author: maia.advance, maymeridian
-Description: Master script. Orchestrates Tuning, Training, and Prediction.
+Description: Master script. Orchestrates Tuning, Training, Prediction, and Graphing.
 '''
 
 import argparse
@@ -33,6 +33,25 @@ def check_and_tune(n_trials=30):
             print("\n[X] Tuning Failed. Falling back to default parameters.")
 
 
+def run_graphing():
+    print("\n=== STAGE: GRAPHING ===")
+    
+    scripts = [
+        ("Feature Statistics", "src/graphing/plot_statistics.py"),
+        ("Transient Examples", "src/graphing/plot_transients.py"),
+        ("Feature Distributions", "src/graphing/plot_features.py")
+    ]
+    
+    for name, path in scripts:
+        if os.path.exists(path):
+            print(f"--- Running {name} ---")
+            subprocess.run([sys.executable, path], check=True)
+        else:
+            print(f"[!] Missing script: {path}")
+
+    print("\n[✓] All plotting tasks complete.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="TDE Classifier Pipeline")
 
@@ -40,6 +59,7 @@ def main():
     parser.add_argument('--train', action='store_true', help="Run training")
     parser.add_argument('--predict', action='store_true', help="Run prediction")
     parser.add_argument('--tune', action='store_true', help="Force re-tuning")
+    parser.add_argument('--graph', action='store_true', help="Generate report plots")
 
     # Options
     parser.add_argument('--model', type=str, default=MODEL_CONFIG.get('default_model', 'catboost'))
@@ -71,9 +91,13 @@ def main():
         print("\n=== STAGE 2: PREDICTION ===")
         run_prediction()
 
-    if not args.train and not args.predict and not args.tune:
+    # 4. GRAPHING
+    if args.graph:
+        run_graphing()
+
+    if not any([args.train, args.predict, args.tune, args.graph]):
         print("No action specified.")
-        print("Usage: python main.py --train --predict")
+        print("Usage: python main.py --train --predict --graph")
 
 if __name__ == "__main__":
     main()
