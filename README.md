@@ -140,7 +140,9 @@ The table below lists the most important features in the final classifier. The d
 ---
 
 ## References
-
-* Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. *Astronomy & Astrophysics*.
-* van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. *Space Science Reviews*.
-* Gezari, S. (2021). Tidal Disruption Events. *Annual Review of Astronomy and Astrophysics*.
+* Bhardwaj, K., et al. (2025). A photometric classifier for tidal disruption events in Rubin LSST. Astronomy & Astrophysics.
+* van Velzen, S., et al. (2021). Optical-Ultraviolet Tidal Disruption Events. Space Science Reviews.
+* Gezari, S. (2021). Tidal Disruption Events. Annual Review of Astronomy and Astrophysics.
+* Thakur, A. (2020). Approaching (Almost) Any Machine Learning Problem. Independently Published.
+* Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A. V., & Gulin, A. (2018). CatBoost: unbiased boosting with categorical features. Advances in Neural Information Processing Systems, 31.
+* Rasmussen, C. E., & Williams, C. K. I. (2006). Gaussian Processes for Machine Learning. The MIT Press. 
