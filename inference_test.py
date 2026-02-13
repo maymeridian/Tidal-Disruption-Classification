@@ -20,8 +20,7 @@ class TestInference(unittest.TestCase):
 
     def test_single_prediction(self):
         """
-        Verifies the model runs on a single object without crashing 
-        and returns a valid probability (0.0 to 1.0).
+        Verifies the model runs on a single object first
         """
         oid = self.log.index[0]
         meta = self.log.loc[oid]
@@ -39,7 +38,9 @@ class TestInference(unittest.TestCase):
         self.assertTrue(0.0 <= prob <= 1.0)
 
     def test_batch_of_objects(self):
-
+        """
+        Verifies the model runs on a batch of objects
+        """
         common_ids = self.log.index.intersection(self.reference_submission.index)
         sample_ids = common_ids[:100] # test 100 objects
 
