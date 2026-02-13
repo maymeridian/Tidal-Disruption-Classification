@@ -469,7 +469,7 @@ class DeepCrossNet(nn.Module):
         return self.final(combined)
 
 
-# FT-Transformer (simplified)
+# FT-Transformer
 class FTTransformer(nn.Module):
     def __init__(self, input_dim, cat_dims=[], hidden_dim=64, depth=3,
                  heads=4, dropout=0.2, act_cls=nn.ReLU):
