@@ -12,7 +12,7 @@ from config import TEST_LOG_PATH, RESULTS_DIR
 class TestInference(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = InferenceModel()
+        cls.model = load_model()
         cls.lc = load_lightcurves('test')
         cls.log = pd.read_csv(TEST_LOG_PATH).set_index('object_id')
         cls.reference_submission = pd.read_csv(os.path.join(RESULTS_DIR, 'submission_2026-01-31_0.7250.csv'))
