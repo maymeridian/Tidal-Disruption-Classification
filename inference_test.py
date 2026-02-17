@@ -4,7 +4,6 @@ tests/test_inference.py
 import unittest
 import pandas as pd
 import os
-import sys
 from src.inference import load_inference_model, process_single_object
 
 from config import TEST_LOG_PATH, RESULTS_DIR
@@ -31,6 +30,7 @@ class TestInference(unittest.TestCase):
         sample_ids = common_ids[:1] # test 100 objects
 
         for oid in sample_ids:
+            # ----------------------
             lc_data = self.lc[self.lc['object_id'] == oid]
             meta = self.log.loc[oid]
             redshift = meta.get('Z', 0)
@@ -38,7 +38,7 @@ class TestInference(unittest.TestCase):
             # ----------------------
 
             batch_pred = self.reference_submission.loc[oid, 'prediction'] # load our 'ground truth' for the purposes of this test
-            features = process_single_object(lc_df, redshift, ebv)
+            features = process_single_object(lc_data, redshift, ebv)
             X = features.drop(columns=['object_id'])
             # get predictions
             pred, prob = self.model.predict(X)
@@ -48,7 +48,7 @@ class TestInference(unittest.TestCase):
             print(f"\n[Test] ID: {oid} | Pred: {pred} | Prob: {prob:.4f}")
             self.assertIsInstance(pred, int)
             self.assertTrue(0.0 <= prob <= 1.0)
-            self.assertEqual(rt_pred, int(batch_pred), 
+            self.assertEqual(pred, int(batch_pred), 
                 f"Mismatch on {oid}: Batch={batch_pred}, RT={pred} (Prob={prob:.4f})")
             print("test")
 
@@ -58,6 +58,7 @@ class TestInference(unittest.TestCase):
         sample_ids = common_ids[:3000] # test 3000 objects
        
         for oid in sample_ids:
+            # ----------------------
             lc_data = self.lc[self.lc['object_id'] == oid]
             meta = self.log.loc[oid]
             batch_pred = self.reference_submission.loc[oid, 'prediction']
@@ -66,12 +67,12 @@ class TestInference(unittest.TestCase):
             # ----------------------
 
 
-            features = process_single_object(lc_df, redshift, ebv)
+            features = process_single_object(lc_data, redshift, ebv)
             X = features.drop(columns=['object_id'])
             # get predictions
             pred, prob = self.model.predict(X)
             # apply threshold
-            y_preds = (y_probs >= self.threshold).astype(int)
+            pred = (prob >= self.threshold).astype(int)
 
             print(f"\n[Test] ID: {oid} | Pred: {pred} | Prob: {prob:.4f}")
             self.assertIsInstance(pred, int)
