@@ -7,10 +7,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-import warnings
-from config import MODEL_PATH, MODELS_DIR, SCORE_PATH
+from config import MODEL_PATH, SCORE_PATH
 from src.features import get_gp_features, apply_deextinction, apply_quality_cuts
-import src.data_loader
 
 
 def load_inference_model(): 
@@ -79,3 +77,6 @@ def process_single_object(lc_df, z, ebv):
 #     y_pred = (y_prob >= threshold).astype(int)
 
 #     return y_pred, y_prob
+
+
+
