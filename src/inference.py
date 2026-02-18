@@ -7,13 +7,12 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-import warnings
-from config import MODEL_PATH, MODELS_DIR, SCORE_PATH
+from config import MODEL_PATH, SCORE_PATH
 from src.features import get_gp_features, apply_deextinction, apply_quality_cuts
-import src.data_loader
+from src.machine_learning.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
 
 
-def load_model(): 
+def load_inference_model(): 
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model not found at {MODEL_PATH}. Run training first!")
         return
@@ -36,7 +35,8 @@ def load_model():
     return model, threshold
 
 
-def process_single_object(lc_df, z, ebv):
+def process_single_object(lc_df, z, z_err, ebv):
+
     lc_df['EBV'] = float(ebv) 
     lc_clean = apply_deextinction(lc_df, log_df=None)
     lc_clean = apply_quality_cuts(lc_clean)
@@ -44,13 +44,19 @@ def process_single_object(lc_df, z, ebv):
     # GP extraction returns dict, convert to df for model
     obj_id = lc_clean['object_id'].iloc[0]
     feature_dict = get_gp_features(obj_id, lc_clean)
-    features = pd.DataFrame([feature_dict])
+    if feature_dict is None:
+        print(f"GP Extraction failed for {obj_id}")
+        return None
+    features = pd.DataFrame([feature_dict]).fillna(0)
+    # ----------------------
+
 
     # rest frame physics
-    z = max(float(z), 0.0)
-    dilation = 1.0 + z
-    
-    features['redshift'] = z
+    safe_z = max(float(z), 0.0)
+    dilation = 1.0 + safe_z
+
+    features['redshift'] = safe_z
+    features['redshift_err'] = float(z_err) 
     features['rest_rise_time'] = features['rise_time'] / dilation
     features['rest_fade_time'] = features['fade_time'] / dilation
     features['rest_fwhm'] = features['fwhm'] / dilation
@@ -58,27 +64,33 @@ def process_single_object(lc_df, z, ebv):
     # amplitude correction
     safe_flux = features['amplitude'].clip(lower=0.001)
     features['absolute_magnitude_proxy'] = -2.5 * np.log10(safe_flux) - 5 * np.log10(z + 0.001)
-    
+
     features['total_radiated_energy'] = features['total_radiated_energy_proxy'] * (z + 0.001)**2
     features['log_tde_error'] = np.log10(features['tde_power_law_error'] + 1e-9)
-    
-    return features
+
+    return features.fillna(0)
 
 
-def predict(lc_df, z, ebv):
-    required_cols = {'Time (MJD)', 'Flux', 'Flux_err', 'Filter', 'object_id'}
+def predict_single_object(model, X):
+    p_base = model.models['base'].predict_proba(X)[:, 1]
 
-    if not required_cols.issubset(lc_df.columns):
-        return 0, 0.0
+    p_morph = p_base 
+    if 'morphology' in model.models:
+        cols = [c for c in MORPHOLOGY_FEATURES if c in X.columns]
+        p_morph = model.models['morphology'].predict_proba(X[cols])[:, 1]
 
-    features = process_single_object(lc_df, z, ebv)
-    X = features.drop(columns=['object_id'])
-    # prediction
-    y_prob = model.predict_proba(X)[:, 1]
-    # apply threshold
-    y_pred = (y_prob >= threshold).astype(int)
+    p_phys = p_base 
+    if 'physics' in model.models:
+        cols = [c for c in PHYSICS_FEATURES if c in X.columns]
+        p_phys = model.models['physics'].predict_proba(X[cols])[:, 1]
 
-    return y_pred, y_prob
+    p_mlp = model.models['mlp'].predict_proba(X)[:, 1]
+    p_knn = model.models['knn'].predict_proba(X)[:, 1]
 
+    final_prob = (0.48 * p_base) + \
+                    (0.16 * p_morph) + \
+                    (0.16 * p_phys) + \
+                    (0.10 * p_mlp) + \
+                    (0.10 * p_knn)
 
-    
+    return float(final_prob[0])
