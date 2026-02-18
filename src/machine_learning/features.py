@@ -231,7 +231,7 @@ def get_gp_features(obj_id, obj_df):
     try:
         gp, y_scale = fit_2d_gp(obj_df)
     except Exception as e:
-        print(f"GP Extraction failed for {obj_id}: {e}")
+        #print(f"GP Extraction failed for {obj_id}: {e}") # Removing these objects improves model
         return None
 
     # --- KERNEL PARAMETERS ---
