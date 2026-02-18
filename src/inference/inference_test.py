@@ -1,15 +1,18 @@
 '''
-tests/test_inference.py
+src/inference_test.py
+Author: maia.advance, maymeridian
+Description: Run inference test.
 '''
+
 import unittest
 import pandas as pd
 import os
-from src.inference import load_inference_model, process_single_object, predict_single_object
-
-from config import TEST_LOG_PATH, RESULTS_DIR
-from src.data_loader import load_lightcurves
 import warnings
+
+from io_handler.io_handler import load_lightcurves
 from sklearn.exceptions import ConvergenceWarning
+from inference.inference import load_inference_model, process_single_object, predict_single_object
+from config import TEST_LOG_PATH, PREDICTIONS_DIR
 
 class TestInference(unittest.TestCase):
     @classmethod
@@ -19,12 +22,9 @@ class TestInference(unittest.TestCase):
         cls.threshold = threshold
         cls.lc = load_lightcurves('test')
         cls.log = pd.read_csv(TEST_LOG_PATH).set_index('object_id')
-        cls.reference_submission = pd.read_csv(
-                    os.path.join(RESULTS_DIR, 'submission_2026-01-31_0.7250.csv')
-                ).set_index('object_id')
+        cls.reference_submission = pd.read_csv(os.path.join(PREDICTIONS_DIR, 'submission_2026-01-31_0.7250.csv')).set_index('object_id')
 
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        # Suppress missing value imputation warnings
         warnings.filterwarnings("ignore", category=UserWarning, module='sklearn.impute')
         warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
@@ -36,24 +36,22 @@ class TestInference(unittest.TestCase):
             lc_data = self.lc[self.lc['object_id'] == oid].copy()
             meta = self.log.loc[oid]
             
-            # prevent NaN imputation errors
             redshift = meta.get('Z', 0.0)
+            z_err = meta.get('Z_err', 0.0)
+            ebv = meta.get('EBV', 0.0)
+
             if pd.isna(redshift): 
                 redshift = 0.0
             
-            z_err = meta.get('Z_err', 0.0)
             if pd.isna(z_err): 
                 z_err = 0.0
             
-            ebv = meta.get('EBV', 0.0)
             if pd.isna(ebv): 
                 ebv = 0.0
 
             batch_pred = self.reference_submission.loc[oid, 'prediction']
             features = process_single_object(lc_data, redshift, z_err, ebv)
             
-            # Handle fit_2d_gp failure, uncommon but happens with a few objects. 
-            # will be updating rest of code base to fix this issue soon
             if features is None:
                 pred, prob = 0, 0.0
             else:
@@ -62,10 +60,10 @@ class TestInference(unittest.TestCase):
                 pred = int(prob >= self.threshold)
 
             print(f"\n[Test] ID: {oid} | Pred: {pred} | Prob: {prob:.4f}")
+
             self.assertIsInstance(pred, int)
             self.assertTrue(0.0 <= prob <= 1.0)
-            self.assertEqual(pred, int(batch_pred), 
-                f"Mismatch on {oid}: Batch={batch_pred}, RT={pred} (Prob={prob:.4f})")
+            self.assertEqual(pred, int(batch_pred), f"Mismatch on {oid}: Batch={batch_pred}, RT={pred} (Prob={prob:.4f})")
 
     def test_batch_of_objects(self):
         common_ids = self.log.index.intersection(self.reference_submission.index)
@@ -84,7 +82,6 @@ class TestInference(unittest.TestCase):
                     meta = self.log.loc[oid]
                     batch_pred = self.reference_submission.loc[oid, 'prediction']
                     
-                    # Robust extraction to prevent NaN imputation errors
                     redshift = meta.get('Z', 0.0)
                     if pd.isna(redshift): 
                         redshift = 0.0
@@ -117,7 +114,6 @@ class TestInference(unittest.TestCase):
                         print(f"Progress: {processed_count}/{total_objects} processed | "
                               f"Exact Matches: {correct_count} | Match Rate: {match_rate:.1f}%")
 
-                    # test assertion
                     self.assertEqual(pred, int(batch_pred), 
                         f"Mismatch on {oid}: Batch={batch_pred}, RT={pred} (Prob={prob:.4f})")
                 
@@ -125,5 +121,3 @@ class TestInference(unittest.TestCase):
                     print(f"\n[CRASH] Object ID {oid} failed: {type(e).__name__} - {str(e)}")
                     self.fail(f"Crashed on {oid}")
 
-if __name__ == '__main__':
-    unittest.main()

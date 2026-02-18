@@ -31,11 +31,10 @@ import lightgbm as lgb
 import optuna
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from config import MODEL_CONFIG
+from src.config import MODEL_CONFIG
 from src.machine_learning.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
-from src.data_loader import get_prepared_dataset
+from src.io_handler.io_handler import get_prepared_dataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

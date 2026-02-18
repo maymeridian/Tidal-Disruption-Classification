@@ -17,11 +17,14 @@ import optuna
 from catboost import CatBoostClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
-from src.data_loader import get_prepared_dataset
-from config import MODELS_DIR
 
-# Path Fix
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+if src_dir not in sys.path:
+    sys.path.append(src_dir)
+
+from io_handler.io_handler import get_prepared_dataset # noqa: E402
+from config import MODELS_DIR # noqa: E402
 
 
 def run_optimization(n_trials):

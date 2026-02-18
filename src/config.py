@@ -10,16 +10,15 @@ import os
 # 1. PROJECT STRUCTURE
 # -----------------------------------------------------------------------------
 
-# Root directory of the project
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Primary subdirectories
+# Primary directories
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(SRC_DIR)
 DATA_DIR = os.path.join(BASE_DIR, 'datasets')
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
-RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+PREDICTIONS_DIR = os.path.join(BASE_DIR, 'predictions')
 
 # Ensure essential directories exist immediately
-for directory in [DATA_DIR, MODELS_DIR, RESULTS_DIR, RESULTS_DIR]:
+for directory in [DATA_DIR, MODELS_DIR, PREDICTIONS_DIR, BASE_DIR, SRC_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 # -----------------------------------------------------------------------------
@@ -34,8 +33,9 @@ TEST_LOG_PATH = os.path.join(DATA_DIR, 'log_data/test_log.csv')
 TRAIN_DATA_PATH = os.path.join(DATA_DIR, 'combined_curves/train_all_full_lightcurves.csv')
 TEST_DATA_PATH = os.path.join(DATA_DIR, 'combined_curves/test_all_full_lightcurves.csv')
 
-PROCESSED_TRAINING_DATA_PATH = 'datasets/processed_data/processed_training_data.csv'
-PROCESSED_TESTING_DATA_PATH = 'datasets/processed_data/processed_testing_data.csv'
+PROCESSED_TRAINING_DATA_PATH = os.path.join(DATA_DIR, 'processed_data/processed_training_data.csv')
+PROCESSED_TESTING_DATA_PATH = os.path.join(DATA_DIR, 'processed_data/processed_testing_data.csv')
+
 # -----------------------------------------------------------------------------
 # 3. MODEL ARTIFACTS
 # -----------------------------------------------------------------------------

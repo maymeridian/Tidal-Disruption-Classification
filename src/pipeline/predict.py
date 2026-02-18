@@ -9,8 +9,8 @@ import os
 import joblib
 from datetime import datetime
 
-from src.data_loader import get_prepared_dataset
-from config import MODEL_PATH, SCORE_PATH, RESULTS_DIR, TEST_LOG_PATH
+from io_handler.io_handler import get_prepared_dataset
+from config import MODEL_PATH, SCORE_PATH, PREDICTIONS_DIR, TEST_LOG_PATH
 
 
 def run_prediction():
@@ -85,8 +85,8 @@ def run_prediction():
     date_str = datetime.now().strftime("%Y-%m-%d")
     filename = f"submission_{date_str}_{f1_score_str}.csv"
 
-    os.makedirs(RESULTS_DIR, exist_ok=True)
-    output_path = os.path.join(RESULTS_DIR, filename)
+    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
+    output_path = os.path.join(PREDICTIONS_DIR, filename)
 
     # Save final submission
     cols = ['object_id', 'prediction']

@@ -8,8 +8,8 @@ import os
 import joblib
 from datetime import datetime
 
-from src.data_loader import get_prepared_dataset
-from src.machine_learning.model_factory import train_with_cv
+from io_handler.io_handler import get_prepared_dataset
+from machine_learning.model_factory import train_with_cv
 from config import MODELS_DIR, MODEL_PATH, SCORE_PATH, MODEL_CONFIG
 
 

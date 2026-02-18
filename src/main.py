@@ -8,9 +8,11 @@ import argparse
 import os
 import subprocess
 import sys
+import unittest
 
-from src.machine_learning.train import run_training
-from src.machine_learning.predict import run_prediction
+from pipeline.train import run_training
+from pipeline.predict import run_prediction
+from inference.inference_test import TestInference
 from config import MODEL_CONFIG, MODELS_DIR
 
 
@@ -25,6 +27,7 @@ def check_and_tune(n_trials=30):
         print(f"--- Initiating Auto-Tuning ({n_trials} trials) ---")
 
         tune_script = os.path.join("src", "machine_learning", "tune.py")
+
         try:
             # Pass the trial count to the script
             subprocess.run([sys.executable, tune_script, '--trials', str(n_trials)], check=True)
@@ -60,6 +63,7 @@ def main():
     parser.add_argument('--predict', action='store_true', help="Run prediction")
     parser.add_argument('--tune', action='store_true', help="Force re-tuning")
     parser.add_argument('--graph', action='store_true', help="Generate report plots")
+    parser.add_argument('--inference', action='store_true', help="Run inference test")
 
     # Options
     parser.add_argument('--model', type=str, default=MODEL_CONFIG.get('default_model', 'catboost'))
@@ -67,12 +71,10 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"--- Starting Pipeline with Model: {args.model} ---")
-
-    # 1. TUNING
+    # Tuning
     if args.tune:
         print(f"\n=== STAGE 0: TUNING (FORCED, {args.trials} Trials) ===")
-        tune_script = os.path.join("src", "machine_learning", "tune.py")
+        tune_script = os.path.join("pipeline", "tune.py")
         try:
             subprocess.run([sys.executable, tune_script, '--trials', str(args.trials)], check=True)
         except subprocess.CalledProcessError:
@@ -81,21 +83,35 @@ def main():
     elif args.train:
         check_and_tune(n_trials=args.trials)
 
-    # 2. TRAINING
+    # Training
     if args.train:
         print("\n=== STAGE 1: TRAINING ===")
         run_training(model_name=args.model)
 
-    # 3. PREDICTION
+    # Prediction
     if args.predict:
         print("\n=== STAGE 2: PREDICTION ===")
         run_prediction()
 
-    # 4. GRAPHING
+    # Graphing
     if args.graph:
         run_graphing()
 
-    if not any([args.train, args.predict, args.tune, args.graph]):
+    # Inference
+    if args.inference:
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromTestCase(TestInference)
+
+        runner = unittest.TextTestRunner(verbosity=2)
+        result = runner.run(suite)
+
+        if result.wasSuccessful():
+            print("All tests passed!")
+        else:
+            print("Some tests failed.")
+
+    # Unknown
+    if not any([args.train, args.predict, args.tune, args.graph, args.inference]):
         print("No action specified.")
         print("Usage: python main.py --train --predict --graph")
 

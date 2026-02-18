@@ -17,23 +17,27 @@ https://github.com/maymeridian/Tidal-Disruption-Classification/tree/competition_
 
 ```text
 .
-├── archives/                   # Directory for final contest submission files
 ├── datasets/                   # Directory for raw light curves and processed feature caches
-├── models/                     # Directory for saving trained models (.pkl) and thresholds
-├── results/                    # Output directory for prediction CSVs
-├── output.txt                  # Terminal output from running train test commands
+├── graphs/                     # Directory for saving plot files
+├── models/                     # Directory for saving trained models (.pkl), output, and thresholds
+├── predictions/                # Directory for saving prediction CSVs
 ├── requirements.txt            # Required library installation (scikit-learn, extinction, catboost...)
-├── config.py                   # Global configuration (paths, filter wavelengths, seeds)
-├── main.py                     # Entry point for the pipeline CLI
 └── src/
-    ├── data_loader.py          # Data ingestion and preprocessing logic
-    ├── features.py             # Feature extraction (Gaussian Processes, Physics fitting)
-    └── machine_learning/       # Core ML logic
-        ├── model_factory.py    # Hybrid Ensemble Classifier architecture definition
+    ├── config.py               # Global configuration (paths, filter wavelengths, seeds)
+    ├── main.py                 # Entry point for the pipeline CLI
+    └── pipeline/ 
         ├── train.py            # Logic for cross-validation and model training
         ├── predict.py          # Logic for loading models and generating submissions
         ├── tune.py             # Hyperparameter optimization scripts
-        └── experimental.py     # Experimental architectures (not used in final model)
+    └── machine_learning/
+        ├── model_factory.py    # Hybrid Ensemble Classifier architecture definition
+        ├── experimental.py     # Experimental architectures (not used in final model)
+        ├── features.py         # Feature extraction (Gaussian Processes, Physics fitting)
+    └── io_handler/
+        ├── io_handler.py       # Data ingestion and preprocessing logic
+    └── inference/
+        ├── inference_test.py   # Logic for running unit test
+        ├── inference.py        # Logic for inference
 ```
 ---
 
@@ -49,7 +53,7 @@ Requires Python 3.12-3.13 to be installed. Install the required dependencies:
 
 The pipeline is controlled via main.py using command-line arguments.
 
-*--Train* : Train the Model: This will load the training data, extract features (if not cached), perform stratified cross-validation, 
+*--train* : Train the Model: This will load the training data, extract features (if not cached), perform stratified cross-validation, 
             and save the final production model to the models/ directory.
 
     `python main.py --train`
@@ -62,6 +66,10 @@ The pipeline is controlled via main.py using command-line arguments.
 *--tune* : Tune the hyperparameters: Performs trials in optimizing parameters that are used in training the model, runs tune.py from main.py.
 
     `python main.py --tune`
+
+*--inference* : Run the unit test: Performs inference, runs inference_test.py from main.py.
+
+    `python main.py --inference`
 
 To run the full pipeline with its current configuration, use:
 
