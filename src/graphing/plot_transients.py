@@ -1,3 +1,9 @@
+'''
+src/graphing/plot_transients.py
+Author: maia.advance, maymeridian
+Description: Plots representative multi-band lightcurves for different transient classes (TDE, Supernova, AGN).
+'''
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os

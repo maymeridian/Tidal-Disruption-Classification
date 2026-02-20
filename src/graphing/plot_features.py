@@ -1,3 +1,9 @@
+'''
+src/graphing/plot_features.py
+Author: maia.advance, maymeridian
+Description: Generates visual explanations of physics models and statistical density plots for all extracted features.
+'''
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np

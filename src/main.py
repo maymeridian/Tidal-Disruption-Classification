@@ -1,7 +1,7 @@
 '''
-main.py
+src/main.py
 Author: maia.advance, maymeridian
-Description: Master script. Orchestrates Tuning, Training, Prediction, and Graphing.
+Description: Master script. Orchestrates Tuning, Training, Prediction, Inference, and Graphing.
 '''
 
 import argparse

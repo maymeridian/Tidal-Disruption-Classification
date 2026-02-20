@@ -28,21 +28,25 @@ from config import FILTER_WAVELENGTHS, PROCESSED_TRAINING_DATA_PATH, PROCESSED_T
 
 warnings.filterwarnings("ignore")
 
-
 def get_log_data(dataset_type):
     """Loads the appropriate metadata/log file for the dataset."""
     if dataset_type == 'train':
-        return pd.read_csv(TRAIN_LOG_PATH)
+        path = TRAIN_LOG_PATH
     elif dataset_type == 'test':
-        return pd.read_csv(TEST_LOG_PATH)
+        path = TEST_LOG_PATH
     else:
         raise ValueError(f"Unknown dataset_type: {dataset_type}")
+        
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Log file not found at {path}")
+        
+    return pd.read_csv(path)
 
 
 def apply_deextinction(df, log_df):
     """
     Applies Galactic Extinction correction (Milky Way dust) to fluxes.
-    Uses the Fitzpatrick (1999) dust law.
+    Uses the Fitzpatrick dust law.
     """
     if 'Flux_Corrected' in df.columns:
         return df
@@ -539,4 +543,3 @@ def extract_features(lc_df, dataset_type='train'):
 
     print(f"Completed in {str(timedelta(seconds=int(time.time() - total_start_time)))}")
     return features_df
-

@@ -1,5 +1,5 @@
 '''
-src/machine_learning/experiments.py
+src/machine/experiments.py
 Author: maia.advance, maymeridian
 Description: Sandbox for various methods to be used compared with our existing model, 
         we ran out of time before being able to figure out a better method than

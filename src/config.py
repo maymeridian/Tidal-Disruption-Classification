@@ -1,5 +1,5 @@
 '''
-config.py
+src/config.py
 Author: maia.advance, maymeridian
 Description: Centralized configuration for paths, model parameters, and physical constants.
 '''
@@ -18,7 +18,7 @@ MODELS_DIR = os.path.join(BASE_DIR, 'models')
 PLOTS_DIR = os.path.join(BASE_DIR, 'plots')
 PREDICTIONS_DIR = os.path.join(BASE_DIR, 'predictions')
 
-# Ensure essential directories exist immediately
+# Ensure essential directories exist
 for directory in [DATA_DIR, MODELS_DIR, PREDICTIONS_DIR, PLOTS_DIR, BASE_DIR, SRC_DIR]:
     os.makedirs(directory, exist_ok=True)
 
