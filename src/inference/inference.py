@@ -9,8 +9,8 @@ import numpy as np
 import joblib
 import os
 from config import MODEL_PATH, SCORE_PATH
-from machine_learning.features import get_gp_features, apply_deextinction, apply_quality_cuts
-from machine_learning.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
+from machine.features import get_gp_features, apply_deextinction, apply_quality_cuts
+from machine.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
 
 
 def load_inference_model(): 

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from scipy.optimize import curve_fit
-from utils import load_lightcurves, load_processed_features, ensure_output_dir
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 
@@ -400,32 +399,21 @@ def plot_color_evolution(df, save_dir):
     plt.close()
 
 # ==========================================
-# 4. MAIN RUNNER
+# 4. WRAPPER FOR MASTER SCRIPT
 # ==========================================
 
-def run():
+def generate_feature_plots(df_curves, df_feats, anatomy_dir, dist_dir):
     print("--- STARTING COMPREHENSIVE FEATURE PLOTTING ---")
     
-    # 1. Load Data
-    df_curves = load_lightcurves()
-    df_feats = load_processed_features()
-    
-    # 2. Setup Directories
-    anatomy_dir = ensure_output_dir("feature_anatomy")
-    dist_dir = ensure_output_dir("feature_distributions")
-    
-    # 3. Run Anatomy Plots (Visual Explanations)
+    # 1. Run Anatomy Plots (Visual Explanations using Raw Curves)
     plot_fireball_anatomy(df_curves, anatomy_dir)
     plot_decay_anatomy(df_curves, anatomy_dir)
     plot_gp_anatomy(df_curves, anatomy_dir)
     plot_color_evolution(df_curves, anatomy_dir)
     
-    # 4. Run Distributions (The Full List)
+    # 2. Run Distributions (The Full List using Extracted Features)
     plot_all_distributions(df_feats, dist_dir)
     
     print("--- DONE ---")
     print(f"Check '{anatomy_dir}' for visual explanations.")
     print(f"Check '{dist_dir}' for the 30+ distribution plots.")
-
-if __name__ == "__main__":
-    run()

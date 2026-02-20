@@ -15,10 +15,11 @@ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SRC_DIR)
 DATA_DIR = os.path.join(BASE_DIR, 'datasets')
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
+PLOTS_DIR = os.path.join(BASE_DIR, 'plots')
 PREDICTIONS_DIR = os.path.join(BASE_DIR, 'predictions')
 
 # Ensure essential directories exist immediately
-for directory in [DATA_DIR, MODELS_DIR, PREDICTIONS_DIR, BASE_DIR, SRC_DIR]:
+for directory in [DATA_DIR, MODELS_DIR, PREDICTIONS_DIR, PLOTS_DIR, BASE_DIR, SRC_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 # -----------------------------------------------------------------------------

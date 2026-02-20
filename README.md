@@ -29,7 +29,7 @@ https://github.com/maymeridian/Tidal-Disruption-Classification/tree/competition_
         ├── train.py            # Logic for cross-validation and model training
         ├── predict.py          # Logic for loading models and generating submissions
         ├── tune.py             # Hyperparameter optimization scripts
-    └── machine_learning/
+    └── machine/
         ├── model_factory.py    # Hybrid Ensemble Classifier architecture definition
         ├── experimental.py     # Experimental architectures (not used in final model)
         ├── features.py         # Feature extraction (Gaussian Processes, Physics fitting)
@@ -38,6 +38,10 @@ https://github.com/maymeridian/Tidal-Disruption-Classification/tree/competition_
     └── inference/
         ├── inference_test.py   # Logic for running unit test
         ├── inference.py        # Logic for inference
+    └── graphing/
+        ├── plot_features.py    # Plots different feature graphs
+        ├── plot_transients.py  # Plots transient behavior
+        ├── plot.py             # Master plot script
 ```
 ---
 
@@ -68,6 +72,10 @@ The pipeline is controlled via main.py using command-line arguments.
     `python main.py --tune`
 
 *--inference* : Run the unit test: Performs inference, runs inference_test.py from main.py.
+
+    `python main.py --inference`
+
+*--plot* : Plot graphs: Graphs different phenomena from plot.py.
 
     `python main.py --inference`
 

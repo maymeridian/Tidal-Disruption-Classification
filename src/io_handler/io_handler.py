@@ -6,7 +6,7 @@ Description: Efficient loading of lightcurve data with caching and automated dat
 
 import pandas as pd
 import os
-from machine_learning.features import extract_features
+from machine.features import extract_features
 from config import DATA_DIR, TRAIN_LOG_PATH, TEST_LOG_PATH
 
 def load_lightcurves(dataset_type='train', data_dir=DATA_DIR):
