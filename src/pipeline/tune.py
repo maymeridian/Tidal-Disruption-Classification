@@ -1,5 +1,5 @@
 '''
-src/machine_learning/tune.py
+pipeline/tune.py
 Author: maia.advance, maymeridian
 Description: ADVANCED Hyperparameter Tuning.
              - Early Stopping: DISABLED (Matches original high-score behavior).
@@ -7,9 +7,7 @@ Description: ADVANCED Hyperparameter Tuning.
              - rsm: ENABLED.
 '''
 
-import sys
 import os
-import argparse
 import json
 import numpy as np
 import optuna
@@ -18,23 +16,15 @@ from catboost import CatBoostClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 
-src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-if src_dir not in sys.path:
-    sys.path.append(src_dir)
-
-from io_handler.io_handler import get_prepared_dataset # noqa: E402
-from config import MODELS_DIR # noqa: E402
-
+from io_handler.io_handler import get_prepared_dataset
+from config import MODELS_DIR
 
 def run_optimization(n_trials):
-    # 1. LOAD DATA ONCE
     print("--- Loading Data into RAM ---")
     X, y = get_prepared_dataset(dataset_type='train')
     print(f"Data Loaded: {X.shape} samples. Starting Tuning...")
 
     def objective(trial):
-        # --- SEARCH SPACE ---
         params = {
             'iterations': trial.suggest_int('iterations', 800, 2000),
             'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.05, log=True),
@@ -72,15 +62,14 @@ def run_optimization(n_trials):
 
             model = CatBoostClassifier(**params)
 
-            # --- NO EARLY STOPPING (Max Accuracy) ---
             model.fit(X_train, y_train, verbose=False)
 
             probs = model.predict_proba(X_val)[:, 1]
 
             best_f1_fold = 0
+
             for t in np.arange(0.2, 0.8, 0.05):
                 preds = (probs >= t).astype(int)
-                # type: ignore
                 score = f1_score(y_val, preds, zero_division=0)
                 if score > best_f1_fold:
                     best_f1_fold = score
@@ -121,10 +110,27 @@ def run_optimization(n_trials):
         print(f"Saved to {save_path}")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--trials', type=int, default=1000)
-    args = parser.parse_args()
+def run_tuning(n_trials=30, force=False):
+    """
+    Checks if best_params.json exists. If not (or if forced), runs the Optuna study.
+    """
+    params_path = os.path.join(MODELS_DIR, 'best_params.json')
 
-    print(f"--- Starting MAX ACCURACY Tuning ({args.trials} Trials) ---")
-    run_optimization(args.trials)
+    # If the file exists and we aren't forcing a retune, just skip
+    if os.path.exists(params_path) and not force:
+        print("\n[✓] Optimized parameters already exist. Skipping tuning.")
+        return
+
+    # Handle the print statements based on whether it was forced or automatic
+    if force:
+        print(f"\n=== STAGE 0: TUNING (FORCED, {n_trials} Trials) ===")
+    else:
+        print("\n[!] No optimized parameters found.")
+        print(f"--- Initiating Auto-Tuning ({n_trials} trials) ---")
+
+    # Run the actual optimization block
+    try:
+        run_optimization(n_trials=n_trials)
+        print("\n[✓] Tuning Complete.")
+    except Exception as e:
+        print(f"\n[X] Tuning Failed: {e}. Falling back to default parameters.")

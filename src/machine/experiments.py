@@ -33,7 +33,7 @@ import sys
 import os
 
 from config import MODEL_CONFIG
-from machine_learning.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
+from machine.model_factory import MORPHOLOGY_FEATURES, PHYSICS_FEATURES
 from io_handler.io_handler import get_prepared_dataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

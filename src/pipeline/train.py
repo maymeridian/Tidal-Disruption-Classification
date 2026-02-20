@@ -9,7 +9,7 @@ import joblib
 from datetime import datetime
 
 from io_handler.io_handler import get_prepared_dataset
-from machine_learning.model_factory import train_with_cv
+from machine.model_factory import train_with_cv
 from config import MODELS_DIR, MODEL_PATH, SCORE_PATH, MODEL_CONFIG
 
 
