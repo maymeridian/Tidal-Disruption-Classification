@@ -1,10 +1,7 @@
 '''
-pipeline/tune.py
+src/pipeline/tune.py
 Author: maia.advance, maymeridian
-Description: ADVANCED Hyperparameter Tuning.
-             - Early Stopping: DISABLED (Matches original high-score behavior).
-             - Data Loading: OPTIMIZED (Loads once).
-             - rsm: ENABLED.
+Description: Hyperparameter Tuning.
 '''
 
 import os
@@ -20,7 +17,6 @@ from io_handler.io_handler import get_prepared_dataset
 from config import MODELS_DIR
 
 def run_optimization(n_trials):
-    print("--- Loading Data into RAM ---")
     X, y = get_prepared_dataset(dataset_type='train')
     print(f"Data Loaded: {X.shape} samples. Starting Tuning...")
 
@@ -35,7 +31,6 @@ def run_optimization(n_trials):
             'bagging_temperature': trial.suggest_float('bagging_temperature', 0.0, 1.0),
             'grow_policy': trial.suggest_categorical('grow_policy', ['SymmetricTree', 'Lossguide', 'Depthwise']),
 
-            # Fixed Settings
             'random_seed': 42,
             'verbose': 0,
             'allow_writing_files': False,
@@ -116,21 +111,19 @@ def run_tuning(n_trials=30, force=False):
     """
     params_path = os.path.join(MODELS_DIR, 'best_params.json')
 
-    # If the file exists and we aren't forcing a retune, just skip
+    # If the file exists and we aren't forcing it to tune again, just skip
     if os.path.exists(params_path) and not force:
-        print("\n[✓] Optimized parameters already exist. Skipping tuning.")
+        print("\nOptimized parameters found in models directory. Skipping tuning.")
         return
 
-    # Handle the print statements based on whether it was forced or automatic
     if force:
-        print(f"\n=== STAGE 0: TUNING (FORCED, {n_trials} Trials) ===")
+        print("\n=== STAGE 0: TUNING ===")
     else:
-        print("\n[!] No optimized parameters found.")
-        print(f"--- Initiating Auto-Tuning ({n_trials} trials) ---")
+        print("\nNo optimized params found.")
+        print(f"--- Initiating Auto-Tuning (with {n_trials} trials) ---")
 
-    # Run the actual optimization block
     try:
         run_optimization(n_trials=n_trials)
-        print("\n[✓] Tuning Complete.")
+        print("\nTuning Complete.")
     except Exception as e:
-        print(f"\n[X] Tuning Failed: {e}. Falling back to default parameters.")
+        print(f"\nTuning Failed: {e}. Falling back to default params.")

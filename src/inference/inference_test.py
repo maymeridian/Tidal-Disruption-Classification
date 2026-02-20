@@ -1,5 +1,5 @@
 '''
-src/inference_test.py
+src/inference/inference_test.py
 Author: maia.advance, maymeridian
 Description: Run inference test.
 '''

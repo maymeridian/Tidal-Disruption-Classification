@@ -1,5 +1,5 @@
 '''
-src/machine_learning/predict.py
+src/pipeline/predict.py
 Author: maia.advance, maymeridian
 Description: Generates predictions with saved model and optimized threshold.
 '''
@@ -19,11 +19,11 @@ def run_prediction():
     Applies the optimized threshold found during training.
     """
 
-    # 1. Load Test Features & IDs
+    # Load Test Features & IDs
     print("Loading Test Lightcurves...")
     X_test, ids = get_prepared_dataset('test')
 
-    # 2. Load Model
+    # load model
     if not os.path.exists(MODEL_PATH):
         print(f"Error: Model not found at {MODEL_PATH}. Run training first!")
         return
@@ -31,9 +31,9 @@ def run_prediction():
     print(f"Loading model from {MODEL_PATH}...")
     model = joblib.load(MODEL_PATH)
 
-    # 3. Load Optimized Threshold
+    # Load Optimized Threshold
     thresh_path = os.path.join(os.path.dirname(SCORE_PATH), 'threshold.txt')
-    threshold = 0.5  # Default fallback
+    threshold = 0.5  # default
     if os.path.exists(thresh_path):
         with open(thresh_path, 'r') as f:
             try:
@@ -44,7 +44,7 @@ def run_prediction():
     else:
         print("Warning: Threshold file not found. Using default (0.5).")
 
-    # 4. Predict
+    # Predict
     if hasattr(model, "feature_names_"):
         missing_cols = set(model.feature_names_) - set(X_test.columns)
         for c in missing_cols:
@@ -57,25 +57,24 @@ def run_prediction():
     # Apply threshold
     y_preds = (y_probs >= threshold).astype(int)
 
-    # 5. Create Partial Submission DataFrame
+    # Create Partial Submission DataFrame
     submission_partial = pd.DataFrame({
         'object_id': ids,
         'prediction': y_preds,
         'probability': y_probs
     })
 
-    # 6. Merge with Full Test Log
+    # Merge with Full Test Log
     print("Finalizing submission file...")
     test_log = pd.read_csv(TEST_LOG_PATH)
 
-    # Left merge ensures every object in the original test set is present
     final_submission = test_log[['object_id']].merge(submission_partial, on='object_id', how='left')
 
-    # Fill NaN (objects we filtered out) with 0
+    # fill NaN (objects we filtered out due to incomplete gaussian process) with 0
     final_submission['prediction'] = final_submission['prediction'].fillna(0).astype(int)
     final_submission['probability'] = final_submission['probability'].fillna(0.0)
 
-    # 7. Construct Output Filename
+    # construct output file str
     f1_score_str = "0.000"
     if os.path.exists(SCORE_PATH):
         with open(SCORE_PATH, 'r') as f:
@@ -88,12 +87,12 @@ def run_prediction():
     os.makedirs(PREDICTIONS_DIR, exist_ok=True)
     output_path = os.path.join(PREDICTIONS_DIR, filename)
 
-    # Save final submission
+    # save final submission
     cols = ['object_id', 'prediction']
     final_submission[cols].to_csv(output_path, index=False)
 
     print(f"Submission saved to {output_path}")
 
-    # Diagnostic: How many TDEs did we find?
+    # how many TDEs did we find?
     num_found = final_submission['prediction'].sum()
     print(f"Total TDEs predicted in Test Set: {num_found}")

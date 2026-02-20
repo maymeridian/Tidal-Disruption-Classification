@@ -1,5 +1,5 @@
 '''
-src/inference.py
+src/inference/inference.py
 Author: maia.advance, maymeridian
 Description: inference model for classification of single objects. 
 '''

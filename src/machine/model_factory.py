@@ -1,8 +1,7 @@
 '''
-src/machine_learning/model_factory.py
+src/machine/model_factory.py
 Author: maia.advance, maymeridian
-Description: Robust ensemble combining physics-guided CatBoost
-             models with non-linear neural and neighbor-based support
+Description: Robust ensemble combining physics-guided CatBoost models with non-linear neural and neighbor-based support
 '''
 
 import numpy as np
@@ -22,7 +21,6 @@ from config import MODEL_CONFIG, MODELS_DIR
 # --- FEATURE SUBSETS ---
 
 # Subset 1: Morphology & Temporal Evolution Features
-# Focused on the "Shape" of the light curve (Rise/Fade/FWHM).
 MORPHOLOGY_FEATURES = [
     'rest_rise_time',
     'rest_fade_time',
@@ -39,7 +37,6 @@ MORPHOLOGY_FEATURES = [
 ]
 
 # Subset 2: Physics & Color Metrics
-# Focused on the "DNA" of the event (Temperature, Decay Laws, Energy).
 PHYSICS_FEATURES = [
     'tde_power_law_error',
     'template_chisq_tde',
@@ -88,7 +85,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         seed = MODEL_CONFIG['random_seed']
 
         # --- GRADIENT BOOSTING PARAMETERS ---
-        # Optimized for stability (lower learning rate, depth 5)
+        # lower learning rate for more stability, depth of 5
         cb_params = {
             'iterations': 1000, 'depth': 5, 'learning_rate': 0.02,
             'l2_leaf_reg': 10, 'rsm': 0.5, 'loss_function': 'Logloss',
@@ -96,7 +93,7 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
             'random_seed': seed, 'scale_pos_weight': self.scale_pos_weight
         }
 
-        # Load optimized hyperparameters if available (from external tuning)
+        # load optimized hyperparameters if available
         json_path = os.path.join(MODELS_DIR, 'best_params.json')
 
         if os.path.exists(json_path):
@@ -105,35 +102,33 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
                     tuned = json.load(f)
 
                 if 'scale_pos_weight' in tuned:
-                    del tuned['scale_pos_weight']  # Handled dynamically
+                    del tuned['scale_pos_weight']  # dynamic
 
                 cb_params.update(tuned)
             except Exception:
                 pass
 
-        # 1. Base Model (CatBoost - All Features)
-        # The primary driver of performance.
+        # 1. (48%) Base Model (CatBoost - All Features)
         self.models['base'] = CatBoostClassifier(**cb_params)
         self.models['base'].fit(X, y)
         self.feature_importances_ = self.models['base'].feature_importances_
 
-        # 2. Morphology Sub-Model (CatBoost - Shape Features)
-        # Forces model to look at shape, even if physics features are strong.
+        # 2. (16%) Morphology Specialist Model (CatBoost - Shape Features only)
         cols_morph = [c for c in MORPHOLOGY_FEATURES if c in X.columns]
 
         if cols_morph:
             self.models['morphology'] = CatBoostClassifier(**cb_params)
             self.models['morphology'].fit(X[cols_morph], y)
 
-        # 3. Physics Sub-Model (CatBoost - Physics Features)
-        # Forces model to validate against physical laws (TDE power law, etc.).
+        # 3. (16%) Physics Specialist Model (CatBoost - Physics Features only)
+        #    (TDE power law, etc.)
         cols_phys = [c for c in PHYSICS_FEATURES if c in X.columns]
         if cols_phys:
             self.models['physics'] = CatBoostClassifier(**cb_params)
             self.models['physics'].fit(X[cols_phys], y)
 
-        # 4. Support Model A: Multi-Layer Perceptron (Neural Network)
-        # Captures non-linear interactions missed by tree splits.
+        # 4. (10%) Support Model A: Multi-Layer Perceptron
+        # captures non-linear interactions missed by decision trees
         mlp_params = {
             'hidden_layer_sizes': (64, 32),
             'activation': 'relu',
@@ -150,8 +145,8 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         ])
         self.models['mlp'].fit(X, y)
 
-        # 5. Support Model B: K-Nearest Neighbors
-        # Manifold learning: identifies objects clustered near TDEs.
+        # 5. (10%) Support Model B: K-Nearest Neighbors
+        # Manifold identifies objects clustered near TDEs.
         knn_clf = KNeighborsClassifier(n_neighbors=15, weights='distance', p=2)
 
         self.models['knn'] = Pipeline([
@@ -168,15 +163,15 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         """
         Generates weighted probability estimates.
         """
-        # 1. Generate Component Predictions
+        # generate component predictions
         p_base = self.models['base'].predict_proba(X)[:, 1]
 
-        p_morph = p_base  # Fallback
+        p_morph = p_base  # Fallback (shouldn't happen)
         if 'morphology' in self.models:
             cols = [c for c in MORPHOLOGY_FEATURES if c in X.columns]
             p_morph = self.models['morphology'].predict_proba(X[cols])[:, 1]
 
-        p_phys = p_base  # Fallback
+        p_phys = p_base  # Fallback (shouldn't happen)
         if 'physics' in self.models:
             cols = [c for c in PHYSICS_FEATURES if c in X.columns]
             p_phys = self.models['physics'].predict_proba(X[cols])[:, 1]
@@ -184,8 +179,8 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         p_mlp = self.models['mlp'].predict_proba(X)[:, 1]
         p_knn = self.models['knn'].predict_proba(X)[:, 1]
 
-        # 2. Ensemble Aggregation (Weighted Average)
-        # Weights logic:
+        # 2. Ensemble Aggregation by Weighted Average
+        # Weights :
         # - Gradient Boosting (80% Total): Split 48% Base, 16% Morph, 16% Phys.
         #   (Base is the strongest, but subsets provide regularization).
         # - Support Models (20% Total): Split 10% MLP, 10% KNN.
@@ -205,12 +200,11 @@ class EnsembleClassifier(BaseEstimator, ClassifierMixin):
         return (probs >= 0.5).astype(int)
 
 
-# --- FACTORY ---
 def get_model(model_name, scale_pos_weight=1.0):
     if model_name == 'catboost':
         return EnsembleClassifier(scale_pos_weight=scale_pos_weight)
     else:
-        raise ValueError("Only 'catboost' is supported.")
+        raise ValueError("Only 'catboost' is supported.") # experiments.py has other model architectures
 
 
 def train_with_cv(model_name, X, y):
@@ -227,11 +221,12 @@ def train_with_cv(model_name, X, y):
     best_thresholds = []
 
     fold = 1
+
     for train_index, val_index in skf.split(X, y):
         X_train, X_val = X.iloc[train_index], X.iloc[val_index]
         y_train, y_val = y.iloc[train_index], y.iloc[val_index]
 
-        # Calculate dynamic class weights for imbalance handling
+        # calculate dynamic class weights for imbalance
         n_pos = y_train.sum()
         scale_weight = (len(y_train) - n_pos) / n_pos if n_pos > 0 else 1.0
 
@@ -240,7 +235,7 @@ def train_with_cv(model_name, X, y):
 
         probs_val = model.predict_proba(X_val)[:, 1]
 
-        # Threshold Optimization
+        # threshold optimization
         best_f1 = 0.0
         best_t = 0.5
 
@@ -264,7 +259,7 @@ def train_with_cv(model_name, X, y):
 
     print(f"\n   Average Ensemble F1: {avg_f1:.4f}")
 
-    # Final Training on 100% of Data
+    # train on all data
     print("\n--- Training Final Production Model ---")
 
     n_pos_all = y.sum()
