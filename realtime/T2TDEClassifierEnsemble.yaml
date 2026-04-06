@@ -1,0 +1,17 @@
+name: "TDE_Ensemble_Classification"
+tasks:
+  # extract Redshifts and EBV 
+  - tier: 2
+    unit: T2DigestRedshifts
+  
+  - tier: 2
+    unit: T2DestEchoEval
+    
+  # run the TDE Classifier, linking the required T2 outputs for lightcurve gen
+  - tier: 2
+    unit: T2TDEClassifierEnsemble
+    config:
+      model_filepath: "..\models\catboost_2026-01-30_0.7250.pkl"
+    t2_dependency:
+      - unit: T2DigestRedshifts
+      - unit: T2DestEchoEval
