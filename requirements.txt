@@ -6,6 +6,11 @@ joblib
 matplotlib
 catboost
 optuna
+
+# required for realtime: 
+poetry
+ampel-hu-astro
+
 # technically the last 3 are optional since only used in experiments.py:
 torch
 lightgbm
