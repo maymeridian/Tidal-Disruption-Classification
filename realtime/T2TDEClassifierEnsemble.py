@@ -13,7 +13,7 @@ from ampel.view.T2DocView import T2DocView
 from ampel.struct.UnitResult import UnitResult
 from ampel.types import UBson
 
-# ---- Model Dependencies ----
+# ---- model dependencies ----
 from extinction import fitzpatrick99
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
@@ -94,11 +94,11 @@ class T2TDEClassifierEnsemble(AbsTiedStateT2Unit):
 
 
     def load_model(self): 
-        if not os.path.exists(MODEL_PATH):
+        if not os.path.exists(self.model_filepath):
             self.logger.info(f"Failed to Load TDE Ensemble model from {self.model_filepath}")
             return
 
-        model = joblib.load(MODEL_PATH)
+        model = joblib.load(self.model_filepath)
         
         # temporarily hard-coding the model threshold, since we will not be changing 
         # it until retraining; which would require other changes anyway.
@@ -694,14 +694,14 @@ class T2TDEClassifierEnsemble(AbsTiedStateT2Unit):
             })
 
         if not records:
-            return {"status": "no_photopoints", "is_tde": False, "tde_probability": 0.0}
+            return { "status": "no_photopoints", "tde_probability": 0.0, "is_tde": False }
 
 
         # construct lightcurve
-        lc_df = pd.Dataframe(records)
+        lc_df = pd.DataFrame(records)
 
         # process lc 
-        features = self.process_object()
+        features = self.process_object(lc_df, z, z_err, ebv)
         
         # generate prediction
         pred, prob = 0, 0.0
@@ -710,12 +710,7 @@ class T2TDEClassifierEnsemble(AbsTiedStateT2Unit):
             if getattr(self, "logger", None):
                 self.logger.info(f"Error generating prediction, something is wrong with TDE Ensemble model.")
             
-            return {
-            "status": "failed to create features for object",
-            "tde_probability": prob,
-            "is_tde": pred,
-            "features": features.to_dict(orient="records")[0]
-            }
+            return { "status": "failed to create features for object", "tde_probability": 0.0, "is_tde": False }
 
         else: 
             # create prediction from features: 
