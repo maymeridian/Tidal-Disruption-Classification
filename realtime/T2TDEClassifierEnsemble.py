@@ -13,6 +13,7 @@ from ampel.view.T2DocView import T2DocView
 from ampel.struct.UnitResult import UnitResult
 from ampel.types import UBson
 
+
 # ---- model dependencies ----
 from extinction import fitzpatrick99
 from sklearn.gaussian_process import GaussianProcessRegressor
