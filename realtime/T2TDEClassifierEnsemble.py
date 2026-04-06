@@ -1,7 +1,7 @@
 '''
-realtime/TDEClassifierEnsemble.py
+realtime/T2TDEClassifierEnsemble.py
 Author: maia.advance, maymeridian
-Description: TDEClassifierEnsemble implements T2BaseClassifier from Ampel-HU-Astro as base class, for use with real data. 
+Description: TDEClassifierEnsemble implements AbsTiedStateT2Unit from Ampel-HU-Astro as base class, for use with real data. 
 '''
 from ampel.contrib.hu.t2.T2BaseClassifier import T2BaseClassifier
 from ampel.abstract.AbsTiedStateT2Unit import AbsTiedStateT2Unit
