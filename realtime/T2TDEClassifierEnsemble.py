@@ -18,7 +18,6 @@ from extinction import fitzpatrick99
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 from scipy.stats import kurtosis, skew, linregress
-from joblib import Parallel, delayed
 
 import numpy as np
 import pandas as pd
